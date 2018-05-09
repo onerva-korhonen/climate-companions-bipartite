@@ -125,9 +125,9 @@ def addNodes(cfg, net, bipartite):
         
     return net
     
-def createMultilayer(cfg):
+def createBipartite(cfg):
     """
-    Creates a multilayer network with two types of nodes (companies and events), node attributes (real names, fields of business, ...), 
+    Creates a bipartite network with two types of nodes (companies and events), node attributes (real names, fields of business, ...), 
     and links between different types of nodes.
     
     Parameters:
@@ -142,9 +142,9 @@ def createMultilayer(cfg):
         
     Returns:
     --------
-    mnet: networkX.Graph(), a bipartite
+    bnet: networkX.Graph(), a bipartite
     """
-    mnet = nx.Graph()
+    bnet = nx.Graph()
     
     # Reading company information, adding company nodes
     cfg['inputPath'] = cfg['companyInputPath']
@@ -152,7 +152,7 @@ def createMultilayer(cfg):
         cfg['columnNames'] = cfg['companyColumnNames']
     else:
         cfg['columnNames'] = ['Alias', 'Name', 'FoB']
-    mnet = addNodes(cfg, mnet, bipartite=0)    
+    bnet = addNodes(cfg, bnet, bipartite=0)    
     
     # Reading event information, adding event nodes
     cfg['inputPath'] = cfg['eventInputPath']
@@ -160,7 +160,7 @@ def createMultilayer(cfg):
         cfg['columnNames'] = cfg['eventColumnNames']
     else:
         cfg['columnNames'] = ['Alias', 'Name']
-    mnet = addNodes(cfg, mnet, bipartite=1)
+    bnet = addNodes(cfg, bnet, bipartite=1)
     
     # Reading link data, adding links
     cfg['inputPath'] = cfg['linkInputPath']
@@ -169,10 +169,10 @@ def createMultilayer(cfg):
     else:
         cfg['columnNames'] = ['Source','Target']
     links = readLinks(cfg)
-    mnet.add_edges_from(links)
+    bnet.add_edges_from(links)
     
     
-    return mnet
+    return bnet
     
     
     
