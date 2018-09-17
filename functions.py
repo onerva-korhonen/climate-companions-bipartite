@@ -195,6 +195,86 @@ def pruneBipartite(bnet):
     
     return bnet
     
+# Basic analysis
+def getDegreeDistributions(bnet, cfg):
+    """
+    Calculates the top and bottom (companies and events) degree distributions of
+    a bipartite network, plots the distributions, and saves the plot.
+    
+    Parameters:
+    -----------
+    cfg: dic, contains:
+        savePathBase: str, a base path (e.g. to a shared folder) for saving figures
+        degreeSaveName: str, name of the file where to save the degree distribution plots
+        nDegreeBins: int, number of bins used to calculate the distributions
+        TODO: add a possibility for different number of bins in top and bottom
+        topColor: str, color for plotting the top degree distribution
+        bottomColor: str, color for plotting the bottom degree distribution
+    bnet: networkx.Graph(), bipartite
+        
+    Returns:
+    --------
+    no direct output, saves the degree distributions in a file
+    """
+    nBins = cfg['nDegreeBins']
+    topColor = cfg['topColor']
+    bottomColor = cfg['bottomColor']   
+    savePath = cfg['savePathBase'] + cfg['degreeSaveName']
+    
+    top = {n for n, d in bnet.nodes(data=True) if d['bipartite']==0}
+    bottom = set(bnet) - top
+    topDegree, bottomDegree = bipartite.degrees(bnet, top)
+    topDegree = dict(topDegree).values() # bipartite.degrees returns a DegreeView so this is required for accessing values
+    bottomDegree = dict(bottomDegree).values()
+    topPdf, topBinCenters = getDistribution(topDegree, nBins)
+    bottomPdf, bottomBinCenters = getDistribution(bottomDegree, nBins)
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.plot(topBinCenters, topPdf, color=topColor, label='Companies (top nodes)')
+    ax.plot(bottomBinCenters, bottomPdf, color=bottomColor, label='Events (bottom nodes)')
+    ax.set_xlabel('Degree')
+    ax.set_ylabel('PDF')
+    ax.legend()
+    plt.tight_layout()
+    plt.savefig(savePath,format='pdf',bbox_inches='tight')
+
+def getDensity(bnet):
+    """
+    Returns density of the bipartite graph.
+    
+    Parameters:
+    -----------
+    bnet: networkx.Graph(), bipartite
+    
+    Returns:
+    d: float, density of bnet
+    """
+    top = {n for n, d in bnet.nodes(data=True) if d['bipartite']==0}
+    d = bipartite.density(bnet,top)
+    return d
+    
+# Accessories:
+    
+def getDistribution(data, nBins):
+    """
+    Calculates the PDF of the given data
+    
+    Parameters:
+    -----------
+    data: a container of data points, e.g. list or np.array
+    nBins: int, number of bins used to calculate the distribution
+    
+    Returns:
+    --------
+    pdf: np.array, PDF of the data
+    binCenters: np.array, points where pdf has been calculated
+    """
+    count, binEdges, _ = binned_statistic(data, data, statistic='count', bins=nBins)
+    pdf = count/float(np.sum(count))
+    binCenters = 0.5*(binEdges[:-1]+binEdges[1:])
+    
+    return pdf, binCenters
 
     
     
