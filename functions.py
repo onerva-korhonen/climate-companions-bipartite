@@ -9,8 +9,10 @@ frontend script (see XX for example) or call interactively from ipython.
 """
 import pandas as pd
 import networkx as nx
+import numpy as np
+import matplotlib.pylab as plt
 from networkx.algorithms import bipartite
-
+from scipy.stats import binned_statistic
 
 # Functions for reading metadata
 
@@ -117,6 +119,7 @@ def addNodes(cfg, net, bipartiteClass):
     
     # Adding nodes and updating their attributes
     for i, node in enumerate(aliases):
+        print node
         net.add_node(node, bipartite=bipartiteClass)
         attr_dic = {}
         for columnName, attribute in zip(columnNames[1::], attributes):
@@ -138,7 +141,7 @@ def createBipartite(cfg):
         linkInputPath: str, path to the link input csv file
         companyColumnNames: list of strs, column names in the csv file containing the company information (default ['Alias', 'Name', 'FoB'])
         eventColumnNames: list of strs, column names in the csv file containing the company information (default ['Alias', 'Name'])
-        linkColumnNames: list of strs, column names in the link csv file (default ['Source, 'Target'])
+        linkColumnNames: list of strs, column names in the link csv file (default ['Source', 'Target'])
         
     Returns:
     --------
@@ -152,7 +155,7 @@ def createBipartite(cfg):
         cfg['columnNames'] = cfg['companyColumnNames']
     else:
         cfg['columnNames'] = ['Alias', 'Name', 'FoB']
-    bnet = addNodes(cfg, bnet, bipartiteClass=0)    
+    bnet = addNodes(cfg, bnet, bipartiteClass=0)   
     
     # Reading event information, adding event nodes
     cfg['inputPath'] = cfg['eventInputPath']
@@ -223,19 +226,27 @@ def getDegreeDistributions(bnet, cfg):
     
     top = {n for n, d in bnet.nodes(data=True) if d['bipartite']==0}
     bottom = set(bnet) - top
-    topDegree, bottomDegree = bipartite.degrees(bnet, top)
+    topDegree = nx.degree(bnet,top)
+    bottomDegree = nx.degree(bnet, bottom)
     topDegree = dict(topDegree).values() # bipartite.degrees returns a DegreeView so this is required for accessing values
     bottomDegree = dict(bottomDegree).values()
     topPdf, topBinCenters = getDistribution(topDegree, nBins)
     bottomPdf, bottomBinCenters = getDistribution(bottomDegree, nBins)
     
     fig = plt.figure()
-    ax = fig.add_subplot(111)
+    ax = fig.add_subplot(121)
     ax.plot(topBinCenters, topPdf, color=topColor, label='Companies (top nodes)')
+    ax.set_xlabel('Degree')
+    ax.set_ylabel('PDF')
+    ax.set_title('Companies (top nodes)')
+    #ax.legend()
+    ax = fig.add_subplot(122)
     ax.plot(bottomBinCenters, bottomPdf, color=bottomColor, label='Events (bottom nodes)')
     ax.set_xlabel('Degree')
     ax.set_ylabel('PDF')
-    ax.legend()
+    ax.set_title('Events (bottom nodes)')
+    #ax.legend()
+    
     plt.tight_layout()
     plt.savefig(savePath,format='pdf',bbox_inches='tight')
 
