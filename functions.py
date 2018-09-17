@@ -94,7 +94,7 @@ def readLinks(cfg):
     
 # Functions for network construction
     
-def addNodes(cfg, net, bipartite):
+def addNodes(cfg, net, bipartiteClass):
     """
     Based on the given metadata, adds a set of nodes to a bipartite graph.
     
@@ -117,7 +117,7 @@ def addNodes(cfg, net, bipartite):
     
     # Adding nodes and updating their attributes
     for i, node in enumerate(aliases):
-        net.add_node(node, bipartite=bipartite)
+        net.add_node(node, bipartite=bipartiteClass)
         attr_dic = {}
         for columnName, attribute in zip(columnNames[1::], attributes):
             attr_dic[columnName] = attribute[i]
@@ -142,7 +142,7 @@ def createBipartite(cfg):
         
     Returns:
     --------
-    bnet: networkX.Graph(), a bipartite
+    bnet: networkx.Graph(), a bipartite
     """
     bnet = nx.Graph()
     
@@ -152,7 +152,7 @@ def createBipartite(cfg):
         cfg['columnNames'] = cfg['companyColumnNames']
     else:
         cfg['columnNames'] = ['Alias', 'Name', 'FoB']
-    bnet = addNodes(cfg, bnet, bipartite=0)    
+    bnet = addNodes(cfg, bnet, bipartiteClass=0)    
     
     # Reading event information, adding event nodes
     cfg['inputPath'] = cfg['eventInputPath']
@@ -160,7 +160,7 @@ def createBipartite(cfg):
         cfg['columnNames'] = cfg['eventColumnNames']
     else:
         cfg['columnNames'] = ['Alias', 'Name']
-    bnet = addNodes(cfg, bnet, bipartite=1)
+    bnet = addNodes(cfg, bnet, bipartiteClass=1)
     
     # Reading link data, adding links
     cfg['inputPath'] = cfg['linkInputPath']
@@ -171,9 +171,31 @@ def createBipartite(cfg):
     links = readLinks(cfg)
     bnet.add_edges_from(links)
     
+    return bnet
+    
+def pruneBipartite(bnet):
+    """
+    Removes from a (bipartite) network all nodes with degree 0
+    
+    Parameters:
+    ----------
+    bnet: networkx.Graph(), a bipartite
+    
+    Returns:
+    --------
+    bnet: networkx.Graph(), the input network without nodes with degree 0
+    """
+    nodesToRemove = []
+    
+    for node in bnet.nodes():
+        if bnet.degree(node) == 0:
+            nodesToRemove.append(node)
+    
+    bnet.remove_nodes_from(nodesToRemove)
     
     return bnet
     
+
     
     
 
