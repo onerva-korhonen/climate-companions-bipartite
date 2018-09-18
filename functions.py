@@ -27,7 +27,7 @@ def readNodes(cfg):
     
     Parameters:
     -----------
-    cfg: dic, contains:
+    cfg: dict, contains:
         inputPath: str, path to the input csv file
         columnNames: list of strs, column names in the csv file (default ['Alias', 'Name', 'FoB'])
         
@@ -65,7 +65,7 @@ def readLinks(cfg):
     
     Parameters:
     -----------
-    cfg: dic, contains:
+    cfg: dict, contains:
         inputPath: str, path to the input csv file
         
     Returns:
@@ -102,16 +102,20 @@ def addNodes(cfg, net, bipartiteClass):
     
     Parameters:
     -----------
-    cfg: dic, contains:
+    cfg: dict, contains:
         inputPath: str, path to the metadata input csv file
         columnNames: list of strs, column names in the csv file
         net: nx.Graph()
         bipartite: int (0 or 1), bipartite node class
+        tags: list of strs, the field of business tags
         
     Returns:
     --------
         net: nx.Graph()
     """
+    topColors = cfg['topColors']
+    networkColors = cfg['networkColors']
+    tags = cfg['tags']
     # Reading node information
     nodeInfo, columnNames = readNodes(cfg)
     aliases = nodeInfo[0] # first column is used as node alias
@@ -124,6 +128,18 @@ def addNodes(cfg, net, bipartiteClass):
         attr_dic = {}
         for columnName, attribute in zip(columnNames[1::], attributes):
             attr_dic[columnName] = attribute[i]
+        if topColors:
+            foundTags = []
+            for tag in tags:
+                if tag in node:
+                    foundTags.append(tag)
+            foundLengths = [len(found) for found in foundTags]
+            foundTag = foundTags[foundLengths.index(max(foundLengths))]
+            attr_dic['nodeColor'] = networkColors(tags.index(foundTag))
+            attr_dic['tag'] = foundTag
+        else:
+            attr_dic['nodeColor'] = cfg['networkBottomColor']
+            attr_dic['tag'] = 'bottom (event)'
         net.nodes[node].update(attr_dic)
         
     return net
@@ -135,13 +151,17 @@ def createBipartite(cfg):
     
     Parameters:
     -----------
-    cfg: dic, contains:
+    cfg: dict, contains:
         companyInputPath: str, path to the company metadata input csv file
         eventInputPath: str, path to the event metadata input csv file
         linkInputPath: str, path to the link input csv file
         companyColumnNames: list of strs, column names in the csv file containing the company information (default ['Alias', 'Name', 'FoB'])
         eventColumnNames: list of strs, column names in the csv file containing the company information (default ['Alias', 'Name'])
         linkColumnNames: list of strs, column names in the link csv file (default ['Source', 'Target'])
+        topColors: bln, shall the node color attributes be set according to the field of business indicates in the alias? If False, a separately set networkBottomColor is used instead.
+        networkColors: matplotlib.cmap, colors associated with different fields of business
+        tags: list of strs, the field of business tags
+        networkBottomColor: str, the color for bottom (event) nodes
         
     Returns:
     --------
@@ -151,6 +171,7 @@ def createBipartite(cfg):
     
     # Reading company information, adding company nodes
     cfg['inputPath'] = cfg['companyInputPath']
+    cfg['topColors'] = True
     if 'companyColumnNames' in cfg.keys():
         cfg['columnNames'] = cfg['companyColumnNames']
     else:
@@ -159,6 +180,7 @@ def createBipartite(cfg):
     
     # Reading event information, adding event nodes
     cfg['inputPath'] = cfg['eventInputPath']
+    cfg['topColors'] = False
     if 'eventColumnNames' in cfg.keys():
         cfg['columnNames'] = cfg['eventColumnNames']
     else:
@@ -206,7 +228,7 @@ def getDegreeDistributions(bnet, cfg):
     
     Parameters:
     -----------
-    cfg: dic, contains:
+    cfg: dict, contains:
         savePathBase: str, a base path (e.g. to a shared folder) for saving figures
         degreeSaveName: str, name of the file where to save the degree distribution plots
         nDegreeBins: int, number of bins used to calculate the distributions
@@ -264,6 +286,58 @@ def getDensity(bnet):
     top = {n for n, d in bnet.nodes(data=True) if d['bipartite']==0}
     d = bipartite.density(bnet,top)
     return d
+    
+# Visualization
+    
+def drawNetwork(bnet, cfg):
+    """
+    Visualizes the bipartite network and saves the figure as pdf.
+    
+    Parameters:
+    -----------
+    bnet: networkx.Graph(), the bipartite to be visualized
+    cfg: dict, contains:
+        tags: list of strs, the field of business tags
+        networkColors: matplotlib.cmap, colors associated with different fields of business
+        bottomNetworkColor: str, color of the bottom nodes (events)
+        nodeSize: int, size of nodes in the visualization
+        savePathBase: str, a base path (e.g. to a shared folder) for saving figures
+        networkSaveName: str, name of the file where to save the network visualization
+        
+    Returns:
+    --------
+    no direct output, saves the network visualization as pdf
+    """
+    
+    tags = cfg['tags']    
+    networkColors = cfg['networkColors']
+    bottomColor = cfg['networkBottomColor']
+    nodeSize = cfg['nodeSize']
+    edgeWidth = cfg['edgeWidth']
+    
+    top = {n for n, d in bnet.nodes(data=True) if d['bipartite']==0}
+    bottom = set(bnet) - top
+    
+    pos = nx.spring_layout(bnet)
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    
+    nx.draw_networkx_nodes(bnet,pos,ax=ax,nodelist=bottom,node_color=bottomColor,node_size=nodeSize,label='Events)')
+    
+    for i, tag in enumerate(tags):
+        taggedNodes = []
+        for topn in top:
+            if bnet.nodes(data=True)[topn]['tag'] == tag:
+                taggedNodes.append(topn)
+        nx.draw_networkx_nodes(bnet,pos,ax=ax,nodelist=taggedNodes,node_color=networkColors(i),node_size=nodeSize,label=tag)
+    
+    nx.draw_networkx_edges(bnet,pos,width=edgeWidth)
+    #ax.legend()
+    plt.axis('off')    
+    
+    savePath = cfg['savePathBase'] + cfg['networkSaveName']
+    plt.savefig(savePath,format='pdf',bbox_inches='tight')
     
 # Accessories:
     
