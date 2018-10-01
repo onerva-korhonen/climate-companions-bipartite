@@ -29,18 +29,24 @@ cfg['networkColors'] = pms.networkColors
 cfg['networkBottomColor'] = pms.networkBottomColor
 cfg['nodeSize'] = pms.nodeSize
 cfg['edgeWidth'] = pms.edgeWidth
+cfg['cliqueTopColor'] = pms.cliqueTopColor
+cfg['nonCliqueColor'] = pms.nonCliqueColor
+cfg['nonCliqueAlpha'] = pms.nonCliqueAlpha
 
 cfg['savePathBase'] = pms.savePathBase
 cfg['degreeSaveName'] = pms.degreeSaveName
 cfg['networkSaveName'] = pms.networkSaveName
+cfg['cliquesSaveName'] = pms.cliqueSaveName
 
 
 
 bnet = functions.createBipartite(cfg)
 bnet = functions.pruneBipartite(bnet)
-for node, d in bnet.nodes(data=True):
-    print node, d['bipartite']
+#for node, d in bnet.nodes(data=True):
+#    print node, d['bipartite']
 density = functions.getDensity(bnet)
 print 'Density: ' + str(density)
 #functions.getDegreeDistributions(bnet, cfg)
-functions.drawNetwork(bnet,cfg)
+#functions.drawNetwork(bnet,cfg)
+cliques, cliqueInfo = functions.findBicliques(bnet)
+functions.visualizeBicliques(bnet,cliqueInfo,cfg)

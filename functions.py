@@ -13,6 +13,7 @@ import numpy as np
 import matplotlib.pylab as plt
 from networkx.algorithms import bipartite
 from scipy.stats import binned_statistic
+from itertools import combinations
 
 # Functions for reading metadata
 
@@ -286,6 +287,109 @@ def getDensity(bnet):
     top = {n for n, d in bnet.nodes(data=True) if d['bipartite']==0}
     d = bipartite.density(bnet,top)
     return d
+
+# Clique analysis
+    
+def stuffNetwork(bnet):
+    """
+    Adds links between nodes of same type so that top and bottom nodes from two
+    complete subgraphs. Note that the output is no more a bipartite graph.
+    
+    Parameters:
+    -----------
+    bnet: networkx.Graph(), bipartite
+    
+    Returns:
+    --------
+    stuffedNet: networkx.Graph(), a general graph with same nodes as bnet
+    """
+    top = {n for n, d in bnet.nodes(data=True) if d['bipartite']==0}
+    bottom = set(bnet) - top
+    topLinks = list(combinations(top,2))
+    bottomLinks = list(combinations(bottom,2))
+    stuffedNet = nx.Graph()
+    stuffedNet.add_nodes_from(bnet.nodes(data=True))
+    stuffedNet.add_edges_from(bnet.edges)
+    stuffedNet.add_edges_from(topLinks)
+    stuffedNet.add_edges_from(bottomLinks)
+    
+    return stuffedNet
+
+def findBicliques(bnet):
+    """
+    Finds the maximal bicliques of the bipartite network bnet. Biclique is a complete subgraph 
+    of bnet so that each member of a biclique is connected to each other member 
+    of the biclique that are from a different node class. Maximal bicliques are
+    not contained by any larger biclique. To find the bicliques, the network is
+    first stuffed to a general network by adding links between all nodes of same class,
+    and then the cliques of this general network are detected. The method is based on Makino &
+    Uno 2004: New algorithms for enumerating all maximal cliques. Note that this
+    algorithm does not scale nicely and may take long time to run for large networks.
+    
+    Parameters:
+    -----------
+    bnet: networkx.Graph(), a bipartite
+    
+    Returns:
+    --------
+    cliques: list of lists, cliques of bnet; each clique is represented as a 
+             list containing the nodes of the clique
+    cliqueInfo: list of dicts; each dict contains one clique separated to top and
+                bottom nodes (keys: 'topNodes', 'bottomNodes')
+    
+    """
+    snet = stuffNetwork(bnet)
+    cliques = list(nx.find_cliques(snet)) # this finds all cliques, including those formed by top and bottom nodes
+    top = {n for n, d in bnet.nodes(data=True) if d['bipartite']==0}
+    bottom = set(bnet) - top
+    for clique in cliques: # remocing the top and bottom cliques
+        if set(clique) == top:
+            cliques.remove(clique)
+            print 'removed top:'
+            print clique
+            break
+    for clique in cliques:
+        if set(clique) == bottom:
+            cliques.remove(clique)
+            print 'removed bottom:'
+            print clique
+            break
+    
+    cliqueInfo = getCliqueIndices(bnet,cliques)
+        
+    return cliques, cliqueInfo
+
+def getCliqueIndices(bnet, cliques):
+    """
+    Calculates the number of top and bottom nodes in each of the bicliques of a
+    bipartite network.
+    
+    Parameters:
+    -----------
+    bnet: networkx.Graph(), a bipartite
+    cliques: list of lists, cliques of bnet; each clique is represented as a 
+             list containing the nodes of the clique
+             
+    Returns:
+    --------
+    cliqueInfo: list of dicts; each dict contains one clique separated to top and
+                bottom nodes (keys: 'topNodes', 'bottomNodes')
+    """
+    top = {n for n, d in bnet.nodes(data=True) if d['bipartite']==0}
+    bottom = set(bnet) - top
+    
+    cliqueInfo = []
+    
+    for i, clique in enumerate(cliques):
+        info = {}
+        cliqueTop = set(clique) & top
+        cliqueBottom = set(clique) & bottom
+        info['topNodes'] = cliqueTop
+        info['bottomNodes'] = cliqueBottom
+        cliqueInfo.append(info)
+    
+    return cliqueInfo
+    
     
 # Visualization
     
@@ -301,6 +405,7 @@ def drawNetwork(bnet, cfg):
         networkColors: matplotlib.cmap, colors associated with different fields of business
         bottomNetworkColor: str, color of the bottom nodes (events)
         nodeSize: int, size of nodes in the visualization
+        edgeWidth: double, width of network edges
         savePathBase: str, a base path (e.g. to a shared folder) for saving figures
         networkSaveName: str, name of the file where to save the network visualization
         
@@ -338,6 +443,63 @@ def drawNetwork(bnet, cfg):
     
     savePath = cfg['savePathBase'] + cfg['networkSaveName']
     plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    
+def visualizeBicliques(bnet, cliqueInfo, cfg):
+    """
+    For each (bi)clique of a network, visualized the network so that members of
+    the clique are colored in one color and rest of the network in another.
+    
+    Parameters:
+    -----------
+    bnet: networkx.Graph(), a bipartite
+    cliques: list of lists, cliques of bnet; each clique is represented as a 
+             list containing the nodes of the clique
+    cfg: dict, contains:
+        bottomNetworkColor: str, color of the bottom nodes (events) in the clique
+        cliqueTopColor: str, color of the top nodes (companies) in the clique
+        nonCliqueColor: str, color of the nodes not belonging to the clique
+        nonCliqueAlpha: double, transparency of the non-clique nodes
+        nodeSize: int, size of nodes in the visualization
+        edgeWidth: double, width of network edges
+        savePathBase: str, a base path (e.g. to a shared folder) for saving figures
+        cliquesSaveName: str, name of the file where to save the clique visualization
+        
+    Returns:
+    --------
+    no direct output, saves the visualizations to given path
+    """
+    bottomColor = cfg['networkBottomColor']
+    topColor = cfg['cliqueTopColor']
+    nonCliqueColor = cfg['nonCliqueColor']
+    nonCliqueAlpha = cfg['nonCliqueAlpha']
+    nodeSize = cfg['nodeSize']
+    edgeWidth = cfg['edgeWidth']
+    
+    saveName = cfg['cliquesSaveName']
+    
+    #top = {n for n, d in bnet.nodes(data=True) if d['bipartite']==0}
+    #bottom = set(bnet) - top
+    
+    pos = nx.spring_layout(bnet)
+    
+    for i, clique in enumerate(cliqueInfo):
+        topCliqueNodes = clique['topNodes']#set(clique) & top
+        bottomCliqueNodes = clique['bottomNodes']#set(clique) & bottom
+        nonCliqueNodes = set(bnet) - topCliqueNodes.intersection(bottomCliqueNodes)#set(clique)
+        
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        nx.draw_networkx_nodes(bnet,pos=pos,nodelist=topCliqueNodes,node_size=nodeSize,node_color=topColor)
+        nx.draw_networkx_nodes(bnet,pos=pos,nodelist=bottomCliqueNodes,node_size=nodeSize,node_color=bottomColor)
+        nx.draw_networkx_nodes(bnet,pos=pos,nodelist=nonCliqueNodes,node_size=nodeSize,node_color=nonCliqueColor,alpha=nonCliqueAlpha)
+        nx.draw_networkx_edges(bnet,pos=pos,width=edgeWidth)
+        plt.axis('off')  
+        
+        savePath = cfg['savePathBase'] + saveName + str(i) + '.pdf'
+        plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    
+    
+    
     
 # Accessories:
     

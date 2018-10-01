@@ -57,6 +57,9 @@ tags = ['R','In','Se','CB','Me','SD','L','Con','N','E','T','CT','CS','S','HKI','
 networkCMap = categorical_cmap(8,3,cmap='Set1')
 networkColors = cm.get_cmap('Set1', lut=len(tags))
 networkBottomColor = 'k'
+cliqueTopColor = 'r'
+nonCliqueColor = 'k'
+nonCliqueAlpha = 0.5
 nodeSize = 50
 edgeWidth = 0.5
 
@@ -64,3 +67,4 @@ edgeWidth = 0.5
 savePathBase = '/media/onerva/KINGSTON/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/'
 degreeSaveName = 'degree-distributions.pdf'
 networkSaveName = 'network.pdf'
+cliqueSaveName = 'network-cliques'
