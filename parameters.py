@@ -45,6 +45,8 @@ linkColumnNames = ['Event:', 'Participant:']
 
 # distributions and binning
 nDegreeBins = 50
+cliqueHeatmapBottomBins = np.arange(0.5,5.5,1)
+cliqueHeatmapTopBins = np.arange(0.5,51.5,1)
 
 # visualization
 cmap = 'cool'
@@ -57,14 +59,24 @@ tags = ['R','In','Se','CB','Me','SD','L','Con','N','E','T','CT','CS','S','HKI','
 networkCMap = categorical_cmap(8,3,cmap='Set1')
 networkColors = cm.get_cmap('Set1', lut=len(tags))
 networkBottomColor = 'k'
+nodeSize = 50
+edgeWidth = 0.5
+
 cliqueTopColor = 'r'
 nonCliqueColor = 'k'
 nonCliqueAlpha = 0.5
-nodeSize = 50
-edgeWidth = 0.5
+
+cliqueHeatmapCmap = 'cool'
+cliqueHetamapTopTicks = [0,9,19,29,39,49]
+cliqueHeatmapBottomTicks = [0,1,2,3]
+cliqueHeatmapTopLabels = ['1','10','20','30','40','50']
+cliqueHeatmapBottomLabels = ['1','2','3','4']
+
+
 
 # save paths
 savePathBase = '/media/onerva/KINGSTON/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/'
 degreeSaveName = 'degree-distributions.pdf'
 networkSaveName = 'network.pdf'
 cliqueSaveName = 'network-cliques'
+cliqueHeatmapSaveName = 'clique-heatmap.pdf'

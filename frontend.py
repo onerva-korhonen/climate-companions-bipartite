@@ -22,6 +22,8 @@ cfg['linkColumnNames'] = pms.linkColumnNames
 cfg['tags'] = pms.tags
 
 cfg['nDegreeBins'] = pms.nDegreeBins
+cfg['cliqueHeatmapTopBins'] = pms.cliqueHeatmapTopBins
+cfg['cliqueHeatmapBottomBins'] = pms.cliqueHeatmapBottomBins
 
 cfg['topColor'] = pms.topColor
 cfg['bottomColor'] = pms.bottomColor
@@ -32,13 +34,17 @@ cfg['edgeWidth'] = pms.edgeWidth
 cfg['cliqueTopColor'] = pms.cliqueTopColor
 cfg['nonCliqueColor'] = pms.nonCliqueColor
 cfg['nonCliqueAlpha'] = pms.nonCliqueAlpha
+cfg['cliqueHeatmapCmap'] = pms.cliqueHeatmapCmap
+cfg['cliqueHeatmapTopTicks'] = pms.cliqueHetamapTopTicks
+cfg['cliqueHeatmapBottomTicks'] = pms.cliqueHeatmapBottomTicks
+cfg['cliqueHeatmapTopLabels'] = pms.cliqueHeatmapTopLabels
+cfg['cliqueHeatmapBottomLabels'] = pms.cliqueHeatmapBottomLabels
 
 cfg['savePathBase'] = pms.savePathBase
 cfg['degreeSaveName'] = pms.degreeSaveName
 cfg['networkSaveName'] = pms.networkSaveName
 cfg['cliquesSaveName'] = pms.cliqueSaveName
-
-
+cfg['cliqueHeatmapSaveName'] = pms.cliqueHeatmapSaveName
 
 bnet = functions.createBipartite(cfg)
 bnet = functions.pruneBipartite(bnet)
@@ -49,4 +55,6 @@ print 'Density: ' + str(density)
 #functions.getDegreeDistributions(bnet, cfg)
 #functions.drawNetwork(bnet,cfg)
 cliques, cliqueInfo = functions.findBicliques(bnet)
-functions.visualizeBicliques(bnet,cliqueInfo,cfg)
+cliques, cliqueInfo = functions.pruneStars(bnet,cliques,cliqueInfo)
+#functions.visualizeBicliques(bnet,cliqueInfo,cfg)
+functions.createCliqueIndexHeatmap(cliqueInfo, cfg)

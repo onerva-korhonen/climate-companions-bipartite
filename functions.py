@@ -12,7 +12,7 @@ import networkx as nx
 import numpy as np
 import matplotlib.pylab as plt
 from networkx.algorithms import bipartite
-from scipy.stats import binned_statistic
+from scipy.stats import binned_statistic, binned_statistic_2d
 from itertools import combinations
 
 # Functions for reading metadata
@@ -373,7 +373,12 @@ def getCliqueIndices(bnet, cliques):
     Returns:
     --------
     cliqueInfo: list of dicts; each dict contains one clique separated to top and
-                bottom nodes (keys: 'topNodes', 'bottomNodes')
+                bottom nodes (keys: 'topNodes': top nodes (companies) of the clique, 
+                                    'bottomNodes' : bottom nodes (events) of the clique,
+                                    'topIndex': number of top nodes of the clique,
+                                    'bottomIndex': number of bottom nodes of the clique,
+                                    'isBridge': does the clique consist of one top node (company) connecting multiple bottom nodes,
+                                    'isStar': does the clique consist of node bottom node (event) connecting multiple top nodes)
     """
     top = {n for n, d in bnet.nodes(data=True) if d['bipartite']==0}
     bottom = set(bnet) - top
@@ -386,9 +391,133 @@ def getCliqueIndices(bnet, cliques):
         cliqueBottom = set(clique) & bottom
         info['topNodes'] = cliqueTop
         info['bottomNodes'] = cliqueBottom
+        info['topIndex'] = len(cliqueTop)
+        info['bottomIndex'] = len(cliqueBottom)
+        if len(cliqueTop) == 1:
+            info['isBridge'] = True
+        else:
+            info['isBridge'] = False
+        if len(cliqueBottom) == 1:
+            info['isStar'] = True
+        else:
+            info['isStar'] = False
         cliqueInfo.append(info)
     
     return cliqueInfo
+    
+def pruneStars(bnet, cliques, cliqueInfo):
+    """
+    Removes from bistars all top nodes (companies) that participate in any other
+    cliques besides the bistar. Bistar is a clique where one bottom node (event)
+    is surrounded by multiple top nodes (companies).
+    
+    Parameters:
+    -----------
+    bnet: networx.Graph(), a bipartite
+    cliques: list of lists, cliques of bnet; each clique is represented as a 
+             list containing the nodes of the clique
+    cliqueInfo: list of dicts; each dict contains one clique separated to top and
+                bottom nodes (keys: 'topNodes': top nodes (companies) of the clique, 
+                                    'bottomNodes' : bottom nodes (events) of the clique,
+                                    'topIndex': number of top nodes of the clique,
+                                    'bottomIndex': number of bottom nodes of the clique,
+                                    'isBridge': does the clique consist of one top node (company) connecting multiple bottom nodes,
+                                    'isStar': does the clique consist of node bottom node (event) connecting multiple top nodes)
+    
+    Returns:
+    --------
+    cliques: list of lists, the original set of cliques with bistars are replaced
+             with the pruned versions
+    cliqueInfo: list of dicts, updated info for the updated clique list
+    """
+    cliquesToRemove = []
+    infosToRemove = []
+    newCliques = []
+    newInfos = []
+    for clique, info in zip(cliques,cliqueInfo):
+        if info['isStar'] == True:
+            cliquesToRemove.append(clique)
+            infosToRemove.append(info)
+            topToRemove = []
+            for top in info['topNodes']:
+                if nx.degree(bnet,top) > 1:
+                    topToRemove.append(top)
+            newClique = list(clique)
+            newInfo = dict(info)
+            newInfo['topIndex'] = newInfo['topIndex'] - len(topToRemove)
+            newInfo['topNodes'] = set(list(newInfo['topNodes']))
+            for top in topToRemove:
+                newClique.remove(top)
+                newInfo['topNodes'].remove(top)
+            newCliques.append(newClique)
+            newInfos.append(newInfo)
+    for clique, info, newClique, newInfo in zip(cliquesToRemove, infosToRemove, newCliques, newInfos):
+        cliques.remove(clique)
+        cliqueInfo.remove(info)
+        cliques.append(newClique)
+        cliqueInfo.append(newInfo)
+    
+    return cliques, cliqueInfo
+
+def createCliqueIndexHeatmap(cliqueInfo, cfg):
+    """
+    Creates a 2D histogram of the number of bicliques with different numbers of
+    top and bottom nodes and visualizes it as a heatmap.
+    
+    Parameters:
+    -----------
+    cliqueInfo: list of dicts; each dict contains one clique separated to top and
+                bottom nodes (keys: 'topNodes': top nodes (companies) of the clique, 
+                                    'bottomNodes' : bottom nodes (events) of the clique,
+                                    'topIndex': number of top nodes of the clique,
+                                    'bottomIndex': number of bottom nodes of the clique,
+                                    'isBridge': does the clique consist of one top node (company) connecting multiple bottom nodes,
+                                    'isStar': does the clique consist of node bottom node (event) connecting multiple top nodes)
+    cfg: dict, containing:
+        cliqueHeatmapCmap: str, colormap to be used for the heatmap
+        cliqueHeatmapTopBins: list of ints, bin edges for the top (company) index
+        cliqueHeatmapBottomBins: list of ints, bin edges for the bottom (event) index
+        savePathBase: str, a base path (e.g. to a shared folder) for saving figures
+        cliqueHeatmapSaveName: str, name of the file where to save the heatmap
+        
+    Returns:
+    --------
+    no direct output, saves the heatmap to the given path
+    """    
+    topIndices = []
+    bottomIndices = []
+    for clique in cliqueInfo:
+        topIndices.append(clique['topIndex'])
+        bottomIndices.append(clique['bottomIndex'])
+        
+    topBins = cfg['cliqueHeatmapTopBins']
+    bottomBins = cfg['cliqueHeatmapBottomBins']
+    count,xEdges,yEdges,_ = binned_statistic_2d(topIndices, bottomIndices, bottomIndices,statistic='count',bins=[topBins,bottomBins])
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    print xEdges[0],xEdges[-1],yEdges[0],yEdges[-1]
+    im = ax.imshow(count,interpolation='none',cmap=cfg['cliqueHeatmapCmap'],aspect='auto',origin='lower')
+    ax.autoscale(False)
+    ax.set_xlabel('Bottom index (number of events)')
+    ax.set_ylabel('Top index (number of companies)')
+    ax.set_xticks(cfg['cliqueHeatmapBottomTicks'])
+    ax.set_yticks(cfg['cliqueHeatmapTopTicks'])
+    ax.set_xticklabels(cfg['cliqueHeatmapBottomLabels'])
+    ax.set_yticklabels(cfg['cliqueHeatmapTopLabels'])
+    ax.tick_params(top='off',right='off')
+    cbar = ax.figure.colorbar(im,ax=ax)
+    cbar.ax.set_ylabel('Count', rotation=-90, va="bottom")
+    
+    #ax.add_colorbar()
+    fig.tight_layout()
+    
+    savePath = cfg['savePathBase'] + cfg['cliqueHeatmapSaveName']
+    plt.savefig(savePath,format='pdf',bbox_inches='tight')
+        
+            
+            
+            
     
     
 # Visualization
