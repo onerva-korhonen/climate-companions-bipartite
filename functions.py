@@ -515,7 +515,105 @@ def createCliqueIndexHeatmap(cliqueInfo, cfg):
     savePath = cfg['savePathBase'] + cfg['cliqueHeatmapSaveName']
     plt.savefig(savePath,format='pdf',bbox_inches='tight')
         
-            
+def getStarness(bnet,cliqueInfo):
+    """
+    Calculates the starness of a bipartite graph. Starness is defined as the 
+    fraction of top nodes (companies) belonging to bistars out of all top nodes
+    of the graph. Bistar is a clique where one bottom node is surrounded by multiple top nodes.
+    
+    Parameters:
+    -----------
+    bnet: networkx.Graph(), a bipartite
+    cliqueInfo: list of dicts; each dict contains one clique separated to top and
+                bottom nodes (keys: 'topNodes': top nodes (companies) of the clique, 
+                                    'bottomNodes' : bottom nodes (events) of the clique,
+                                    'topIndex': number of top nodes of the clique,
+                                    'bottomIndex': number of bottom nodes of the clique,
+                                    'isBridge': does the clique consist of one top node (company) connecting multiple bottom nodes,
+                                    'isStar': does the clique consist of node bottom node (event) connecting multiple top nodes)
+    
+    Returns:
+    --------
+    starness: double, starness of the bigraph
+    """
+    nStarNodes = 0
+    top = {n for n, d in bnet.nodes(data=True) if d['bipartite']==0}
+    nTotal = len(top)
+    for clique in cliqueInfo:
+        if clique['isStar']:
+            nStarNodes = nStarNodes + clique['topIndex']
+    starness = nStarNodes/float(nTotal)
+    return starness
+    
+def getCliqueFieldHomogeneity(bnet,cliqueInfo):
+    """
+    Calculates how homogeneous a biclique is in terms of the fields of business
+    of the participating top nodes (companies).
+    
+    Parameters:
+    -----------
+    bnet: networkx.Graph(), a bipartite
+    cliqueInfo: dict, contains:
+        topNodes: list of nodes, top nodes (companies) of the clique, 
+        bottomNodes : list of nodes, bottom nodes (events) of the clique,
+        topIndex: int, number of top nodes of the clique,
+        bottomIndex: int, number of bottom nodes of the clique,
+        isBridge: boolean, does the clique consist of one top node (company) connecting multiple bottom nodes,
+        isStar: boolean, does the clique consist of node bottom node (event) connecting multiple top nodes)
+    
+    Returns:
+    --------
+    cliqueHomogeneity: double, defined as XX
+    TODO: add the definition!
+    """
+    fieldsOfBusiness = []
+    topNodes = cliqueInfo['topNodes']
+    allFields = nx.get_node_attributes(bnet,'tag')
+    for top in topNodes:
+        fieldsOfBusiness.append(allFields[top])
+    uniqueFields = set(fieldsOfBusiness)
+    nFields = len(uniqueFields)
+    count = {}
+    for field in fieldsOfBusiness:
+        count[field] = count.get(field,0) + 1
+    majorField = max(count,key=count.get)
+    nMajor = count[majorField]
+    majorFraction = nMajor/float(len(topNodes))
+    print 'For the present clique, major field: ' + majorField + ', ' + str(nMajor) + ', ' + str(majorFraction) + ' of all (' + str(len(topNodes)) + ') companies'
+    return majorFraction, nFields, count
+    
+def getCliqueFieldHomogeneityWrapper(bnet,cliqueInfo):
+    """
+    As a wrapper, handles the loop over cliques to obtain the biclique homogeneity
+    using getCliqueFieldHomogeneity.
+    
+    Parameters:
+    -----------
+    bnet: networkx.Graph(), a bipartite
+    cliqueInfo: list of dicts, each of them containing:
+        topNodes: list of nodes, top nodes (companies) of the clique, 
+        bottomNodes : list of nodes, bottom nodes (events) of the clique,
+        topIndex: int, number of top nodes of the clique,
+        bottomIndex: int, number of bottom nodes of the clique,
+        isBridge: boolean, does the clique consist of one top node (company) connecting multiple bottom nodes,
+        isStar: boolean, does the clique consist of node bottom node (event) connecting multiple top nodes)
+    
+    Returns:
+    --------
+    TODO: fill this part of the documentation
+    """
+    homogeneities = []
+    nFields = []
+    counts = []
+    for clique in cliqueInfo:
+        homogeneity, nField, count = getCliqueFieldHomogeneity(bnet,clique)
+        homogeneities.append(homogeneity)
+        nFields.append(nField)
+        counts.append(count)
+    return homogeneities, nFields, counts
+    
+    
+    
             
             
     
