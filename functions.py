@@ -11,6 +11,7 @@ import pandas as pd
 import networkx as nx
 import numpy as np
 import matplotlib.pylab as plt
+import random
 from networkx.algorithms import bipartite
 from scipy.stats import binned_statistic, binned_statistic_2d
 from itertools import combinations
@@ -247,8 +248,7 @@ def getDegreeDistributions(bnet, cfg):
     bottomColor = cfg['bottomColor']   
     savePath = cfg['savePathBase'] + cfg['degreeSaveName']
     
-    top = {n for n, d in bnet.nodes(data=True) if d['bipartite']==0}
-    bottom = set(bnet) - top
+    top, bottom = getTopAndBottom(bnet)
     topDegree = nx.degree(bnet,top)
     bottomDegree = nx.degree(bnet, bottom)
     topDegree = dict(topDegree).values() # bipartite.degrees returns a DegreeView so this is required for accessing values
@@ -284,7 +284,7 @@ def getDensity(bnet):
     Returns:
     d: float, density of bnet
     """
-    top = {n for n, d in bnet.nodes(data=True) if d['bipartite']==0}
+    top, _ = getTopAndBottom(bnet)
     d = bipartite.density(bnet,top)
     return d
 
@@ -303,8 +303,7 @@ def stuffNetwork(bnet):
     --------
     stuffedNet: networkx.Graph(), a general graph with same nodes as bnet
     """
-    top = {n for n, d in bnet.nodes(data=True) if d['bipartite']==0}
-    bottom = set(bnet) - top
+    top, bottom = getTopAndBottom(bnet)
     topLinks = list(combinations(top,2))
     bottomLinks = list(combinations(bottom,2))
     stuffedNet = nx.Graph()
@@ -340,8 +339,7 @@ def findBicliques(bnet):
     """
     snet = stuffNetwork(bnet)
     cliques = list(nx.find_cliques(snet)) # this finds all cliques, including those formed by top and bottom nodes
-    top = {n for n, d in bnet.nodes(data=True) if d['bipartite']==0}
-    bottom = set(bnet) - top
+    top, bottom = getTopAndBottom(bnet) 
     for clique in cliques: # remocing the top and bottom cliques
         if set(clique) == top:
             cliques.remove(clique)
@@ -380,8 +378,7 @@ def getCliqueIndices(bnet, cliques):
                                     'isBridge': does the clique consist of one top node (company) connecting multiple bottom nodes,
                                     'isStar': does the clique consist of node bottom node (event) connecting multiple top nodes)
     """
-    top = {n for n, d in bnet.nodes(data=True) if d['bipartite']==0}
-    bottom = set(bnet) - top
+    top, bottom = getTopAndBottom(bnet)
     
     cliqueInfo = []
     
@@ -537,7 +534,7 @@ def getStarness(bnet,cliqueInfo):
     starness: double, starness of the bigraph
     """
     nStarNodes = 0
-    top = {n for n, d in bnet.nodes(data=True) if d['bipartite']==0}
+    top, _ = getTopAndBottom(bnet) 
     nTotal = len(top)
     for clique in cliqueInfo:
         if clique['isStar']:
@@ -628,6 +625,49 @@ def getCliqueFieldDiversityWrapper(bnet,cliqueInfo):
     return richnesses, cliqueDiversities, counts, majorFields
     
     
+# Null models
+    
+def createRandomBipartite(bnet):
+    """
+    Creates a randomly wired bipartite network with the same number of top and
+    bottom nodes and the same density as a given network.
+    
+    Parameters:
+    -----------
+    bnet: networkx.Graph(), a bipartite
+    
+    Returns:
+    --------
+    randNet: networkx.Graph(), a randomly wired bipartite
+    """
+    top, bottom = getTopAndBottom(bnet) 
+    nTop = len(top)
+    nBottom = len(bottom)
+    nEdges = len(bnet.edges())
+    randNet = nx.bipartite.gnmk_random_graph(nTop,nBottom,nEdges)
+    return randNet
+
+def shuffleFields(bnet):
+    """
+    Creates a version of bnet with the tags (fields) of top nodes (companies) randomly shuffled.
+    
+    Parameters:
+    -----------
+    bnet: networkx.Graph(), a bipartite
+    
+    Returns:
+    --------
+    randNet: networkx.Graph(), a shuffled version of bnet
+    """
+    top, bottom = getTopAndBottom(bnet)
+    tags = nx.get_node_attributes(bnet,'tag')
+    topTags = []
+    for topNode in top:
+        topTags.append(tags[topNode])
+    shuffledTags = list(topTags) # shuffling happens in-place so a copy of the list is needed
+    random.shuffle(shuffledTags)
+    
+    return shuffledTags # TODO: replace with shuffledNet
     
             
             
@@ -662,8 +702,7 @@ def drawNetwork(bnet, cfg):
     nodeSize = cfg['nodeSize']
     edgeWidth = cfg['edgeWidth']
     
-    top = {n for n, d in bnet.nodes(data=True) if d['bipartite']==0}
-    bottom = set(bnet) - top
+    top, bottom = getTopAndBottom(bnet)
     
     pos = nx.spring_layout(bnet)
     
@@ -719,15 +758,12 @@ def visualizeBicliques(bnet, cliqueInfo, cfg):
     
     saveName = cfg['cliquesSaveName']
     
-    #top = {n for n, d in bnet.nodes(data=True) if d['bipartite']==0}
-    #bottom = set(bnet) - top
-    
     pos = nx.spring_layout(bnet)
     
     for i, clique in enumerate(cliqueInfo):
-        topCliqueNodes = clique['topNodes']#set(clique) & top
-        bottomCliqueNodes = clique['bottomNodes']#set(clique) & bottom
-        nonCliqueNodes = set(bnet) - topCliqueNodes.intersection(bottomCliqueNodes)#set(clique)
+        topCliqueNodes = clique['topNodes']
+        bottomCliqueNodes = clique['bottomNodes']
+        nonCliqueNodes = set(bnet) - topCliqueNodes.intersection(bottomCliqueNodes)
         
         fig = plt.figure()
         ax = fig.add_subplot(111)
@@ -798,6 +834,22 @@ def getDistribution(data, nBins):
     
     return pdf, binCenters
 
+def getTopAndBottom(bnet):
+    """
+    Finds the sets of top and bottom nodes of a bipartite network.
+    
+    Parameters:
+    -----------
+    bnet: networkx.Graph(), a bipartite
+    
+    Returns:
+    --------
+    top: set, top nodes of the bipartite
+    bottom: set, bottom nodes of the bipartite
+    """
+    top = {n for n, d in bnet.nodes(data=True) if d['bipartite']==0}
+    bottom = set(bnet) - top
+    return top, bottom
     
     
 
