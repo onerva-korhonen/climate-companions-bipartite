@@ -545,10 +545,12 @@ def getStarness(bnet,cliqueInfo):
     starness = nStarNodes/float(nTotal)
     return starness
     
-def getCliqueFieldHomogeneity(bnet,cliqueInfo):
+def getCliqueFieldDiversity(bnet,cliqueInfo):
     """
-    Calculates how homogeneous a biclique is in terms of the fields of business
-    of the participating top nodes (companies).
+    Calculates the diversity of a biclique in terms of the fields of business
+    of the participating top nodes (companies). For obtaining the diversity, the
+    Gini-Simpson index transformed to effective diversity is used:
+    GS = sum_1^S(p_1^2), D = 1/(1-GS)
     
     Parameters:
     -----------
@@ -563,29 +565,37 @@ def getCliqueFieldHomogeneity(bnet,cliqueInfo):
     
     Returns:
     --------
-    cliqueHomogeneity: double, defined as XX
-    TODO: add the definition!
+    richness: int, number of different fields in the clique
+    cliqueDiversity: double, the effective diversity based on Gini-Simpson index
+    count: dict, number of abundance of different fields in the clique
+    majorField: str, the most common field tag in the clique
     """
     fieldsOfBusiness = []
     topNodes = cliqueInfo['topNodes']
+    nTops = len(topNodes)
     allFields = nx.get_node_attributes(bnet,'tag')
     for top in topNodes:
         fieldsOfBusiness.append(allFields[top])
     uniqueFields = set(fieldsOfBusiness)
-    nFields = len(uniqueFields)
+    richness = len(uniqueFields)
     count = {}
     for field in fieldsOfBusiness:
         count[field] = count.get(field,0) + 1
+    fractions = []
+    for field, abundance in count.iteritems():
+        fractions.append(abundance/float(nTops))
+    GS = 1 - sum(np.array(fractions)**2)
+    cliqueDiversity = 1/(1-GS)
     majorField = max(count,key=count.get)
     nMajor = count[majorField]
     majorFraction = nMajor/float(len(topNodes))
-    print 'For the present clique, major field: ' + majorField + ', ' + str(nMajor) + ', ' + str(majorFraction) + ' of all (' + str(len(topNodes)) + ') companies'
-    return majorFraction, nFields, count
+    print 'For the present clique, effective diversity: ' + str(cliqueDiversity) + ', major field: ' + majorField + ', ' + str(nMajor) + ', ' + str(majorFraction) + ' of all (' + str(len(topNodes)) + ') companies'
+    return richness, cliqueDiversity, count, majorField
     
-def getCliqueFieldHomogeneityWrapper(bnet,cliqueInfo):
+def getCliqueFieldDiversityWrapper(bnet,cliqueInfo):
     """
-    As a wrapper, handles the loop over cliques to obtain the biclique homogeneity
-    using getCliqueFieldHomogeneity.
+    As a wrapper, handles the loop over cliques to obtain the biclique diversity
+    using getCliqueFieldDiversity.
     
     Parameters:
     -----------
@@ -600,17 +610,22 @@ def getCliqueFieldHomogeneityWrapper(bnet,cliqueInfo):
     
     Returns:
     --------
-    TODO: fill this part of the documentation
+    richenesses: list of ints, numbers of different fields in the cliques
+    cliqueDiversities: list of doubles, the effective diversities based on Gini-Simpson index
+    counts: list of dicts, numbers of abundance of different fields in the cliques
+    majorFields: list of strs, the most common field tags in the cliques
     """
-    homogeneities = []
-    nFields = []
+    richnesses = []
+    cliqueDiversities = []
     counts = []
+    majorFields = []
     for clique in cliqueInfo:
-        homogeneity, nField, count = getCliqueFieldHomogeneity(bnet,clique)
-        homogeneities.append(homogeneity)
-        nFields.append(nField)
+        richness, diversity, count, majorField = getCliqueFieldDiversity(bnet,clique)
+        richnesses.append(richness)
+        cliqueDiversities.append(diversity)
         counts.append(count)
-    return homogeneities, nFields, counts
+        majorFields.append(majorField)
+    return richnesses, cliqueDiversities, counts, majorFields
     
     
     
@@ -724,6 +739,39 @@ def visualizeBicliques(bnet, cliqueInfo, cfg):
         
         savePath = cfg['savePathBase'] + saveName + str(i) + '.pdf'
         plt.savefig(savePath,format='pdf',bbox_inches='tight')
+        
+def plotRichnessVsDiversity(richnesses,diversities,cfg):
+    """
+    Plots the diversity of cliques as a function of the number of different fields
+    in the cliques.
+    
+    Parameters:
+    -----------
+    richnesses: list of ints, numbers of different fields in the cliques
+    diversities: list of doubles, effective diversities of the cliques
+    cfg: a dictionary containing:
+        savePathBase: str, a base path (e.g. to a shared folder) for saving figures
+        diversitySaveName: str, name of the file where to save the visualization
+        identityLineStyle: str, line style for plotting the identity line
+        scatterMarker: str, point marker style
+        
+    Returns:
+    --------
+    no direct output, saves the figure to the given path
+    """
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    identity = range(min(richnesses),max(richnesses))
+    plt.plot(identity,identity,ls=cfg['identityLineStyle'],label='x = y')
+    plt.plot(richnesses,diversities,cfg['scatterMarker'],ls='',label='data')
+    ax.set_xlabel('Number of fields')
+    ax.set_ylabel('Effective diversity')
+    ax.legend()
+    fig.tight_layout()
+    
+    savePath = cfg['savePathBase'] + cfg['diversitySaveName']
+    plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    
     
     
     

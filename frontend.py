@@ -39,12 +39,15 @@ cfg['cliqueHeatmapTopTicks'] = pms.cliqueHetamapTopTicks
 cfg['cliqueHeatmapBottomTicks'] = pms.cliqueHeatmapBottomTicks
 cfg['cliqueHeatmapTopLabels'] = pms.cliqueHeatmapTopLabels
 cfg['cliqueHeatmapBottomLabels'] = pms.cliqueHeatmapBottomLabels
+cfg['identityLineStyle'] = pms.identityLineStyle
+cfg['scatterMarker'] = pms.scatterMarker
 
 cfg['savePathBase'] = pms.savePathBase
 cfg['degreeSaveName'] = pms.degreeSaveName
 cfg['networkSaveName'] = pms.networkSaveName
 cfg['cliquesSaveName'] = pms.cliqueSaveName
 cfg['cliqueHeatmapSaveName'] = pms.cliqueHeatmapSaveName
+cfg['diversitySaveName'] = pms.diversitySaveName
 
 bnet = functions.createBipartite(cfg)
 bnet = functions.pruneBipartite(bnet)
@@ -60,4 +63,5 @@ cliques, cliqueInfo = functions.pruneStars(bnet,cliques,cliqueInfo)
 #functions.createCliqueIndexHeatmap(cliqueInfo, cfg)
 starness = functions.getStarness(bnet,cliqueInfo)
 print 'Starness: ' + str(starness)
-homogeneities, nFields, counts = functions.getCliqueFieldHomogeneityWrapper(bnet,cliqueInfo)
+richnesses, diversities, counts, majorFields = functions.getCliqueFieldDiversityWrapper(bnet,cliqueInfo)
+functions.plotRichnessVsDiversity(richnesses,diversities,cfg) # Note: for some reason, this command does not work nicely in Spyder (only one plot is saved). It works as it should when run from the terminal.

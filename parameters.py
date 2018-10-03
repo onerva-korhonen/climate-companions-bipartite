@@ -72,6 +72,9 @@ cliqueHeatmapBottomTicks = [0,1,2,3]
 cliqueHeatmapTopLabels = ['1','10','20','30','40','50']
 cliqueHeatmapBottomLabels = ['1','2','3','4']
 
+identityLineStyle = '--'
+scatterMarker = '*'
+
 
 
 # save paths
@@ -80,3 +83,4 @@ degreeSaveName = 'degree-distributions.pdf'
 networkSaveName = 'network.pdf'
 cliqueSaveName = 'network-cliques'
 cliqueHeatmapSaveName = 'clique-heatmap.pdf'
+diversitySaveName = 'richness-vs-diversity.pdf'
