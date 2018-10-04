@@ -24,6 +24,10 @@ cfg['tags'] = pms.tags
 cfg['nDegreeBins'] = pms.nDegreeBins
 cfg['cliqueHeatmapTopBins'] = pms.cliqueHeatmapTopBins
 cfg['cliqueHeatmapBottomBins'] = pms.cliqueHeatmapBottomBins
+cfg['nRichnessBins'] = pms.nRichnessBins
+
+cfg['nRandomIterations'] = pms.nRandomIterations
+cfg['nRandomBins'] = pms.nRandomBins
 
 cfg['topColor'] = pms.topColor
 cfg['bottomColor'] = pms.bottomColor
@@ -41,6 +45,12 @@ cfg['cliqueHeatmapTopLabels'] = pms.cliqueHeatmapTopLabels
 cfg['cliqueHeatmapBottomLabels'] = pms.cliqueHeatmapBottomLabels
 cfg['identityLineStyle'] = pms.identityLineStyle
 cfg['scatterMarker'] = pms.scatterMarker
+cfg['randomColor'] = pms.randomColor
+cfg['randomMarker'] = pms.randomMarker
+cfg['randomAlpha'] = pms.randomAlpha
+cfg['dataColor'] = pms.dataColor
+cfg['dataMarker'] = pms.dataMarker
+cfg['dataLineWidth'] = pms.dataLineWidth
 
 cfg['savePathBase'] = pms.savePathBase
 cfg['degreeSaveName'] = pms.degreeSaveName
@@ -48,6 +58,7 @@ cfg['networkSaveName'] = pms.networkSaveName
 cfg['cliquesSaveName'] = pms.cliqueSaveName
 cfg['cliqueHeatmapSaveName'] = pms.cliqueHeatmapSaveName
 cfg['diversitySaveName'] = pms.diversitySaveName
+cfg['comparisonVsRandomSaveName'] = pms.comparisonVsRandomSaveName
 
 bnet = functions.createBipartite(cfg)
 bnet = functions.pruneBipartite(bnet)
@@ -65,3 +76,7 @@ starness = functions.getStarness(bnet,cliqueInfo)
 print 'Starness: ' + str(starness)
 richnesses, diversities, counts, majorFields = functions.getCliqueFieldDiversityWrapper(bnet,cliqueInfo)
 functions.plotRichnessVsDiversity(richnesses,diversities,cfg) # Note: for some reason, this command does not work nicely in Spyder (only one plot is saved). It works as it should when run from the terminal.
+
+measures = {'richness':richnesses}
+
+functions.compareAgainstRandom(bnet,cfg,measures)

@@ -650,6 +650,7 @@ def createRandomBipartite(bnet):
 def shuffleFields(bnet):
     """
     Creates a version of bnet with the tags (fields) of top nodes (companies) randomly shuffled.
+    The link configuration of randNet is the same as in bnet.
     
     Parameters:
     -----------
@@ -661,15 +662,121 @@ def shuffleFields(bnet):
     """
     top, bottom = getTopAndBottom(bnet)
     tags = nx.get_node_attributes(bnet,'tag')
-    topTags = []
+    colors = nx.get_node_attributes(bnet,'nodeColor')
+    topAttributes = []
     for topNode in top:
-        topTags.append(tags[topNode])
-    shuffledTags = list(topTags) # shuffling happens in-place so a copy of the list is needed
-    random.shuffle(shuffledTags)
+        topAttributes.append((tags[topNode],colors[topNode]))
+    shuffledAttributes = list(topAttributes) # shuffling happens in-place so a copy of the list is needed
+    random.shuffle(shuffledAttributes)
+    newTags = {}
+    newColors = {}
+    for topNode, attribute in zip(top,shuffledAttributes):
+        newTags[topNode] = attribute[0]
+        newColors[topNode] = attribute[1]
+    for bottomNode in bottom:
+        newTags[bottomNode] = tags[bottomNode]
+        newColors[bottomNode] = colors[bottomNode]
+    randNet = nx.Graph()
+    randNet.add_nodes_from(bnet.nodes(data=True))
+    nx.set_node_attributes(randNet,newTags,'tag')
+    nx.set_node_attributes(randNet,newColors,'color')
+    randNet.add_edges_from(bnet.edges())
     
-    return shuffledTags # TODO: replace with shuffledNet
+    return randNet
     
+def compareAgainstRandom(bnet,cfg,measures):
+    """
+    Compares the measures obtained from bnet agains a suitable null model (edge-shuffled
+    for starness and clique sizes, tag-shuffled for richness and diversity).
+    
+    Parameters:
+    -----------
+    bnet: networkx.Graph(), the original bipartite network
+    cfg: dict, containing:
+               nRandomIterations: int, number of null model instances to be used
+               nRandomBins: int, number of bins for obtaining the random distribution
+               nRichnessBins: int, number of bins for obtaining distributions of richness
+               randomColor: str, color for visualizing the values obtained from random networks
+               dataColor: str, color for visualizing the actual values
+               randomMarker: str, marker for the values obtained from random networks
+               dataMarker: str, marker for the actual values
+               dataLineWidth: double, width of the lines presenting data (increased from default to increase data-random contrast)
+               randomAlpha: double, transparency value for the data points from random networks
+               savnRandomBins: int, number of bins for obtaining the random distributionePathBase: str, a base path (e.g. to a shared folder) for saving figures
+               comparisonVsRandomSaveName: str, name of the file where to save visualizations of the comparison
+    measures, dict, possible keys:
+                    starness: double, starness of the bigraph
+                    cliques: TODO: add definition
+                    richness: list of ints, numbers of different fields in the cliques
+                    cliqueDiversity: list of doubles, the effective diversities based on Gini-Simpson index
+                    
+    Returns:
+    --------
+    
+    
+    """
+    nIters = cfg['nRandomIterations']
+    randColor = cfg['randomColor']
+    dataColor = cfg['dataColor']
+    randMarker = cfg['randomMarker']
+    randAlpha = cfg['randomAlpha']
+    dataMarker = cfg['dataMarker']
+    dataLineWidth = cfg['dataLineWidth']
+    nRandBins = cfg['nRandomBins']
+    savePathBase = cfg['savePathBase']
+    saveNameBase = cfg['comparisonVsRandomSaveName']  
+    
+    if 'starness' in measures.keys():
+        starness = measures['starness']
+        randStarness = []
+        for i in range(nIters):
+            randNet = createRandomBipartite(bnet)
+            randNet = pruneBipartite(randNet)
+            cliques, cliqueInfo = findBicliques(randNet)
+            cliques, cliqueInfo = pruneStars(randNet,cliques,cliqueInfo)
+            randStarness.append(getStarness(bnet,cliqueInfo))
+        randLabel = 'Starness of random networks, mean: ' + str(np.mean(randStarness))
+        dataLabel = 'True starness: ' + str(starness)
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        pdf, binCenters = getDistribution(randStarness,nRandBins)
+        plt.plot(binCenters,pdf,color=randColor,alpha=randAlpha,label=randLabel)
+        plt.plot([starness,starness],[0,max(pdf)],color=dataColor,label=dataLabel)
+        ax.set_xlabel('Starness')
+        ax.set_ylabel('PDF')
+        ax.legend()
+        plt.tight_layout()
+        savePath = savePathBase + saveNameBase + '_starness.pdf'
+        plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    if 'richness' in measures.keys():
+        richness = measures['richness']
+        nBins = cfg['nRichnessBins']
+        trueDist, trueBinCenters = getDistribution(richness,nBins)
+        randDists = []
+        randBinCenters = []
+        randRichnesses = []
+        for i in range(nIters):
+            randNet = shuffleFields(bnet)
+            cliques,cliqueInfo = findBicliques(randNet)
+            randRichness, randDiversity,_,_ = getCliqueFieldDiversityWrapper(randNet,cliqueInfo)
+            randDist,binCenters = getDistribution(randRichness,nBins)
+            randDists.append(randDist)
+            randBinCenters.append(binCenters)
+            randRichnesses.append(randRichness)
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        for dist, centers in zip(randDists,randBinCenters):
+            plt.plot(centers,dist,color=randColor,alpha=randAlpha)
+        plt.plot(trueBinCenters,trueDist,color=dataColor,linewidth=dataLineWidth,label='True richness')
+        ax.set_xlabel('Richness')
+        ax.set_ylabel('PDF')
+        ax.legend()
+        savePath = savePathBase + saveNameBase + '_richness_dist.pdf'
+        plt.savefig(savePath,format='pdf',bbox_inches='tight')
+
+        
             
+        
             
     
     
@@ -851,6 +958,21 @@ def getTopAndBottom(bnet):
     bottom = set(bnet) - top
     return top, bottom
     
+def getJaccardIndex(a,b):
+    """
+    Calculates the Jaccard index of two lists (Jaccard(a,b) = |intersection(a,b)|/|union(a,b)|)
+    
+    Parameters:
+    -----------
+    a, b: two lists (or sets)
+    
+    Returns:
+    J: Jaccard index of a and b
+    """
+    a = set(a)
+    b = set(b)
+    J = len(a.intersection(b))/float(len(a.union(b)))
+    return J
     
 
 

@@ -47,6 +47,12 @@ linkColumnNames = ['Event:', 'Participant:']
 nDegreeBins = 50
 cliqueHeatmapBottomBins = np.arange(0.5,5.5,1)
 cliqueHeatmapTopBins = np.arange(0.5,51.5,1)
+nRichnessBins = 5
+
+# comparison against random
+
+nRandomIterations = 1000
+nRandomBins = 20
 
 # visualization
 cmap = 'cool'
@@ -75,6 +81,14 @@ cliqueHeatmapBottomLabels = ['1','2','3','4']
 identityLineStyle = '--'
 scatterMarker = '*'
 
+dataColor = 'r'
+dataMarker = '*'
+dataLineWidth = 3.
+randomColor = 'k'
+randomMarker = '.'
+randomAlpha = 0.2
+
+
 
 
 # save paths
@@ -84,3 +98,4 @@ networkSaveName = 'network.pdf'
 cliqueSaveName = 'network-cliques'
 cliqueHeatmapSaveName = 'clique-heatmap.pdf'
 diversitySaveName = 'richness-vs-diversity.pdf'
+comparisonVsRandomSaveName = 'comparison-vs-random'
