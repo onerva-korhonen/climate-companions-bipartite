@@ -59,6 +59,7 @@ cfg['cliquesSaveName'] = pms.cliqueSaveName
 cfg['cliqueHeatmapSaveName'] = pms.cliqueHeatmapSaveName
 cfg['diversitySaveName'] = pms.diversitySaveName
 cfg['comparisonVsRandomSaveName'] = pms.comparisonVsRandomSaveName
+cfg['relativeDiversitySaveName'] = pms.relativeDiversitySaveName
 
 bnet = functions.createBipartite(cfg)
 bnet = functions.pruneBipartite(bnet)
@@ -77,6 +78,6 @@ print 'Starness: ' + str(starness)
 richnesses, diversities, counts, majorFields = functions.getCliqueFieldDiversityWrapper(bnet,cliqueInfo)
 functions.plotRichnessVsDiversity(richnesses,diversities,cfg) # Note: for some reason, this command does not work nicely in Spyder (only one plot is saved). It works as it should when run from the terminal.
 
-measures = {'richness':richnesses}
+measures = {'richness':richnesses,'diversity':diversities}
 
 functions.compareAgainstRandom(bnet,cfg,measures)

@@ -687,7 +687,7 @@ def shuffleFields(bnet):
 def compareAgainstRandom(bnet,cfg,measures):
     """
     Compares the measures obtained from bnet agains a suitable null model (edge-shuffled
-    for starness and clique sizes, tag-shuffled for richness and diversity).
+    for starness, tag-shuffled for richness and diversity).
     
     Parameters:
     -----------
@@ -702,11 +702,12 @@ def compareAgainstRandom(bnet,cfg,measures):
                dataMarker: str, marker for the actual values
                dataLineWidth: double, width of the lines presenting data (increased from default to increase data-random contrast)
                randomAlpha: double, transparency value for the data points from random networks
+               identityLineStyle: str, line style for plotting the identity line
                savnRandomBins: int, number of bins for obtaining the random distributionePathBase: str, a base path (e.g. to a shared folder) for saving figures
                comparisonVsRandomSaveName: str, name of the file where to save visualizations of the comparison
     measures, dict, possible keys:
                     starness: double, starness of the bigraph
-                    cliques: TODO: add definition
+                    cliques: list of lists, cliques of the bipartite (each clique presented as a list of nodes)
                     richness: list of ints, numbers of different fields in the cliques
                     cliqueDiversity: list of doubles, the effective diversities based on Gini-Simpson index
                     
@@ -752,9 +753,17 @@ def compareAgainstRandom(bnet,cfg,measures):
         richness = measures['richness']
         nBins = cfg['nRichnessBins']
         trueDist, trueBinCenters = getDistribution(richness,nBins)
+        sizes = [len(clique) for clique in measures['cliques']]
         randDists = []
         randBinCenters = []
         randRichnesses = []
+        if 'diversity' in measures.keys():
+            diversity = measures['diversity']
+            trueDiverDist, trueDiverBinCenters = getDistribution(diversity,nBins)
+            randDiverDists = []
+            randDiverBinCenters = []
+            randDiversities = []
+            randRelativeDiversities = []
         for i in range(nIters):
             randNet = shuffleFields(bnet)
             cliques,cliqueInfo = findBicliques(randNet)
@@ -762,16 +771,100 @@ def compareAgainstRandom(bnet,cfg,measures):
             randDist,binCenters = getDistribution(randRichness,nBins)
             randDists.append(randDist)
             randBinCenters.append(binCenters)
-            randRichnesses.append(randRichness)
+            randRichnesses.extend(randRichness)
+            if diversity in measures.keys():
+                randDiverDist,diverBinCenters = getDistribution(randDiversity,nBins)
+                randDiverDists.append(randDiverDist)
+                randDiverBinCenters.append(diverBinCenters)
+                randDiversities.extend(randDiversity)
+                randRelativeDiversities.append(np.mean(np.array(randDiversity)/np.array(randRichness)))
         fig = plt.figure()
-        ax = fig.add_subplot(111)
+        if 'diversity' in measures.keys():
+            ax = fig.add_subplot(221)
+        else:
+            ax = fig.add_subplot(111)
         for dist, centers in zip(randDists,randBinCenters):
             plt.plot(centers,dist,color=randColor,alpha=randAlpha)
         plt.plot(trueBinCenters,trueDist,color=dataColor,linewidth=dataLineWidth,label='True richness')
         ax.set_xlabel('Richness')
         ax.set_ylabel('PDF')
+        ax.set_title('Richness')
         ax.legend()
+        if 'diversity' in measures.keys():
+            ax = fig.add_subplot(222)
+            for dist, centers in zip(randDiverDists,randDiverBinCenters):
+                plt.plot(centers,dist,color=randColor,alpha=randAlpha)
+            plt.plot(trueDiverBinCenters,trueDiverDist,color=dataColor,linewidth=dataLineWidth,label='True diversity')
+            ax.set_xlabel('Effective diversity')
+            ax.set_ylabel('PDF')
+            ax.set_title('Effective diversity')
+            ax.legend()
+            
+            ax = fig.add_subplot(223)
+            identity = range(min(randRichnesses),max(randRichnesses))
+            plt.plot(randRichnesses,randDiversities,color=randColor,marker=randMarker,alpha=randAlpha,ls='',label='random')
+            plt.plot(identity,identity,color='k',ls=cfg['identityLineStyle'],label='x = y')
+            plt.plot(richness,diversity,color=dataColor,marker=dataMarker,ls='',label='Data')
+            ax.set_xlabel('Richness')
+            ax.set_ylabel('Effective diversity')
+            ax.legend()
+            
+            ax = fig.add_subplot(224)
+            relativeDiversity = np.array(diversity)/np.array(richness)
+            trueMean = np.mean(relativeDiversity)
+            trueLabel = 'data, mean: ' + str(trueMean)
+            randRelativeDiversity = np.array(randDiversities)/np.array(randRichnesses)
+            randomMean = np.mean(randRelativeDiversity)
+            randomLabel = 'random, pooled mean across all cliques: ' + str(randomMean) # this is a mean across all cliques in all random networks
+            plt.plot(sizes,randRelativeDiversity,color=randColor,marker=randMarker,alpha=randAlpha,ls='',label=randomLabel)
+            plt.plot(sizes,relativeDiversity,color=dataColor,marker=dataMarker,ls='',label=trueLabel)
+            ax.set_xlabel('Clique size')
+            ax.set_ylabel('Relative diversity')
+            ax.legend()
+        
+        plt.tight_layout()
         savePath = savePathBase + saveNameBase + '_richness_dist.pdf'
+        plt.savefig(savePath,format='pdf',bbox_inches='tight')
+        
+        if 'diversity' in measures.keys():
+            randDist,randCenters = getDistribution(randRelativeDiversities,nRandBins)
+            randLabel = 'mean relative diversity in random networks, mean of means: ' + str(np.mean(randRelativeDiversities))
+            dataLabel = 'mean relative diversity in data: ' + str(trueMean)
+            plt.plot(randCenters,randDist,color=randColor,alpha=randAlpha,label=randLabel)
+            plt.plot([trueMean,trueMean],[0,max(randDist)],color=dataColor,label=dataLabel)
+            ax.set_xlabel('Mean relative diversity')
+            ax.set_ylabel('PDF')
+            ax.legend()
+            plt.tight_layout()
+            savePath = savePathBase + saveNameBase + '_mean_relative_diversity.pdf'
+            plt.savefig(savePath,format='pdf',bbox_inches='tight')
+            
+            
+            
+    elif 'diversity' in measures.keys():
+        diversity = measures['diversity']
+        trueDiverDist, trueDiverBinCenters = getDistribution(diversity,nBins)
+        randDiverDists = []
+        randDiverBinCenters = []
+        randDiversities = []
+        for i in range(nIters):
+            randNet = shuffleFields(bnet)
+            cliques,cliqueInfo = findBicliques(randNet)
+            _,randDiversity,_,_ = getCliqueFieldDiversityWrapper(randNet,cliqueInfo)
+            randDiverDist,diverBinCentres = getDistribution(randDiversity,nBins)
+            randDiverDists.append(randDiverDist)
+            randDiverBinCenters.append(diverBinCenters)
+            randDiversities.append(randDiversity)
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        for dist, centers in zip(randDiverDists,randDiverBinCenters):
+                plt.plot(centers,dist,color=randColor,alpha=randAlpha)
+        plt.plot(trueDiverBinCenters,trueDiverDist,color=dataColor,linewidth=dataLineWidth,label='True diversity')
+        ax.set_xlabel('Effective diversity')
+        ax.set_ylabel('PDF')
+        ax.set_title('Effective diversity')
+        ax.legend()
+        savePath = savePathBase + saveNameBase + '_diversity_dist.pdf'
         plt.savefig(savePath,format='pdf',bbox_inches='tight')
 
         
@@ -914,6 +1007,52 @@ def plotRichnessVsDiversity(richnesses,diversities,cfg):
     
     savePath = cfg['savePathBase'] + cfg['diversitySaveName']
     plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    
+def plotRelativeDiversity(cliques,richnesses,diversities,cfg):
+    """
+    Plots the relative diversity as a function of clique size. The relative
+    diversity is defined as effective diversity/richness and tells how far
+    away a clique is from it's theoretical maximal diversity. It's plotted against
+    clique size as richness strongly depends on it.
+    
+    Parameters:
+    -----------
+    cliques: list of lists, cliques of the network
+    richnesses: list of ints, numbers of different fields in the cliques
+    diversities: list of doubles, effective diversities of the cliques
+    cfg: a dictionary containing:
+        savePathBase: str, a base path (e.g. to a shared folder) for saving figures
+        relativeDiversitySaveName: str, name of the file where to save the visualization
+        identityLineStyle: str, line style for plotting the identity line
+        scatterMarker: str, point marker style
+    
+    Returns:
+    --------
+    no direct output, saves the figure to the given path
+    """
+    relativeDiversity = np.array(diversities)/np.array(richnesses)
+    sizes = [len(clique) for clique in cliques]
+    identity = range(min(sizes),max(sizes))
+    fig = plt.figure()
+    ax = fig.add_subplot(121)
+    plt.plot(identity,identity,ls=cfg['identityLineStyle'],label='x = y')
+    plt.plot(sizes,richnesses,ls='',marker=cfg['scatterMarker'],label='richness')
+    ax.set_xlabel('Clique size')
+    ax.set_ylabel('Richness')
+    ax.legend()
+    fig.tight_layout()
+   
+    ax = fig.add_subplot(122)
+    
+    plt.plot(sizes,relativeDiversity,ls='',marker=cfg['scatterMarker'],label='relative diversity')
+    ax.set_xlabel('Clique size')
+    ax.set_ylabel('Relative diversity')
+    ax.legend()
+    fig.tight_layout()
+    
+    savePath = cfg['savePathBase'] + cfg['relativeDiversitySaveName']
+    plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    
     
     
     
