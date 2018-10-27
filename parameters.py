@@ -38,10 +38,12 @@ def categorical_cmap(nc, nsc, cmap, continuous=False):
 # input
 companyInputPath = '/media/onerva/KINGSTON/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Members_alias.csv'
 eventInputPath = '/media/onerva/KINGSTON/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Events_alias.csv'
-linkInputPath = '/media/onerva/KINGSTON/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Linkit_2016.csv'
+linkInputPaths = ['/media/onerva/KINGSTON/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Linkit_2016.csv']
 companyColumnNames = ['Alias:', 'Member:']
 eventColumnNames = ['Alias:', 'Event:', 'Time:','Other information:']
 linkColumnNames = ['Event:', 'Participant:']
+
+years = ['2011','2012','2013','2014','2015','2016','2017','2018','11-12','13-14','15-16','17-18','all']
 
 # distributions and binning
 nDegreeBins = 50
@@ -93,10 +95,10 @@ randomAlpha = 0.2
 
 # save paths
 savePathBase = '/media/onerva/KINGSTON/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/'
-degreeSaveName = 'degree-distributions.pdf'
-networkSaveName = 'network.pdf'
+degreeSaveName = 'degree-distributions'
+networkSaveName = 'network'
 cliqueSaveName = 'network-cliques'
-cliqueHeatmapSaveName = 'clique-heatmap.pdf'
-diversitySaveName = 'richness-vs-diversity.pdf'
+cliqueHeatmapSaveName = 'clique-heatmap'
+diversitySaveName = 'richness-vs-diversity'
 comparisonVsRandomSaveName = 'comparison-vs-random'
-relativeDiversitySaveName = 'relative-diversity.pdf'
+relativeDiversitySaveName = 'relative-diversity'
