@@ -1015,7 +1015,7 @@ def visualizeBicliques(bnet, cliqueInfo, cfg):
         nx.draw_networkx_edges(bnet,pos=pos,width=edgeWidth)
         plt.axis('off')  
         
-        savePath = cfg['savePathBase'] + saveName + str(i) + '.pdf'
+        savePath = cfg['savePathBase'] + saveName + '_' + str(i) + '.pdf'
         plt.savefig(savePath,format='pdf',bbox_inches='tight')
         
 def plotRichnessVsDiversity(richnesses,diversities,cfg):

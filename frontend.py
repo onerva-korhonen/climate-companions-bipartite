@@ -56,7 +56,7 @@ for year, linkInputPath in zip(years,linkInputPaths):
     cfg['dataMarker'] = pms.dataMarker
     cfg['dataLineWidth'] = pms.dataLineWidth
     
-    cfg['savePathBase'] = pms.savePathBase + '_' + year + '.pdf'
+    cfg['savePathBase'] = pms.savePathBase
     cfg['degreeSaveName'] = pms.degreeSaveName + '_' + year + '.pdf'
     cfg['networkSaveName'] = pms.networkSaveName + '_' + year + '.pdf'
     cfg['cliquesSaveName'] = pms.cliqueSaveName + '_' + year

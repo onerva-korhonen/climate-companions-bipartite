@@ -43,7 +43,7 @@ companyColumnNames = ['Alias:', 'Member:']
 eventColumnNames = ['Alias:', 'Event:', 'Time:','Other information:']
 linkColumnNames = ['Event:', 'Participant:']
 
-years = ['2011','2012','2013','2014','2015','2016','2017','2018','11-12','13-14','15-16','17-18','all']
+years = ['2016']#['2011','2012','2013','2014','2015','2016','2017','2018','11-12','13-14','15-16','17-18','all']
 
 # distributions and binning
 nDegreeBins = 50
