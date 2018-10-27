@@ -83,13 +83,7 @@ for year, linkInputPath in zip(years,linkInputPaths):
 #    #functions.getDegreeDistributions(bnet, cfg)
     functions.drawNetwork(bnet,cfg)
     cliques, cliqueInfo = functions.findBicliques(bnet)
-    cliques, cliqueInfo = functions.pruneStars(bnet,cliques,cliqueInfo)
     nCliques.append(len(cliques))
-    functions.visualizeBicliques(bnet,cliqueInfo,cfg)
-#    #functions.createCliqueIndexHeatmap(cliqueInfo, cfg)
-    starness = functions.getStarness(bnet,cliqueInfo)
-    print 'Starness: ' + str(starness)
-    starnesses.append(starness)
     richnesses, diversities, counts, majorFields = functions.getCliqueFieldDiversityWrapper(bnet,cliqueInfo)
     meanRichnesses.append(np.mean(np.array(richnesses)))
     meanDiversities.append(np.mean(np.array(diversities)))
@@ -98,7 +92,19 @@ for year, linkInputPath in zip(years,linkInputPaths):
     functions.plotRichnessVsDiversity(richnesses,diversities,cfg) # Note: for some reason, this command does not work nicely in Spyder (only one plot is saved). It works as it should when run from the terminal.
     functions.plotRelativeDiversity(cliques,richnesses,diversities,cfg)
     
-    measures = {'starness':starness,'richness':richnesses,'diversity':diversities, 'cliques':cliques}
+    measures = {'richness':richnesses,'diversity':diversities, 'cliques':cliques}
+    
+    functions.compareAgainstRandom(bnet,cfg,measures)
+    
+    # for analyzing starness, let's remove from stars the nodes that participate also in other cliques
+    cliques, cliqueInfo = functions.pruneStars(bnet,cliques,cliqueInfo)
+    functions.visualizeBicliques(bnet,cliqueInfo,cfg)
+#    #functions.createCliqueIndexHeatmap(cliqueInfo, cfg)
+    starness = functions.getStarness(bnet,cliqueInfo)
+    print 'Starness: ' + str(starness)
+    starnesses.append(starness)
+    
+    measures = {'starness':starness}
     
     functions.compareAgainstRandom(bnet,cfg,measures)
     print year + ' OK'

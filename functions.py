@@ -413,7 +413,8 @@ def pruneStars(bnet, cliques, cliqueInfo):
     """
     Removes from bistars all top nodes (companies) that participate in any other
     cliques besides the bistar. Bistar is a clique where one bottom node (event)
-    is surrounded by multiple top nodes (companies).
+    is surrounded by multiple top nodes (companies). If all top nodes of the bistar
+    are removed, the whole star is removed.
     
     Parameters:
     -----------
@@ -436,30 +437,39 @@ def pruneStars(bnet, cliques, cliqueInfo):
     """
     cliquesToRemove = []
     infosToRemove = []
+    bottomOnlyCliques = []
+    bottomOnlyInfos = []
     newCliques = []
     newInfos = []
     for clique, info in zip(cliques,cliqueInfo):
         if info['isStar'] == True:
-            cliquesToRemove.append(clique)
-            infosToRemove.append(info)
             topToRemove = []
             for top in info['topNodes']:
                 if nx.degree(bnet,top) > 1:
                     topToRemove.append(top)
-            newClique = list(clique)
-            newInfo = dict(info)
-            newInfo['topIndex'] = newInfo['topIndex'] - len(topToRemove)
-            newInfo['topNodes'] = set(list(newInfo['topNodes']))
-            for top in topToRemove:
-                newClique.remove(top)
-                newInfo['topNodes'].remove(top)
-            newCliques.append(newClique)
-            newInfos.append(newInfo)
+            if len(topToRemove) == len(info['topNodes']): # if all the top nodes of a clique are to be removed, let's remove the whole clique
+                bottomOnlyCliques.append(clique)
+                bottomOnlyInfos.append(info)
+            else:
+                cliquesToRemove.append(clique)
+                infosToRemove.append(info)
+                newClique = list(clique)
+                newInfo = dict(info)
+                newInfo['topIndex'] = newInfo['topIndex'] - len(topToRemove)
+                newInfo['topNodes'] = set(list(newInfo['topNodes']))
+                for top in topToRemove:
+                    newClique.remove(top)
+                    newInfo['topNodes'].remove(top)
+                newCliques.append(newClique)
+                newInfos.append(newInfo)
     for clique, info, newClique, newInfo in zip(cliquesToRemove, infosToRemove, newCliques, newInfos):
         cliques.remove(clique)
         cliqueInfo.remove(info)
         cliques.append(newClique)
         cliqueInfo.append(newInfo)
+    for bottomOnlyClique, bottomOnlyInfo in zip(bottomOnlyCliques,bottomOnlyInfos):
+        cliques.remove(bottomOnlyClique)
+        cliqueInfo.remove(bottomOnlyInfo)
     
     return cliques, cliqueInfo
 
