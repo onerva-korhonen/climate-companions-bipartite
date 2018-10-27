@@ -11,8 +11,17 @@ network
 import parameters as pms
 import functions
 
+import numpy as np
+
 years = pms.years
 linkInputPaths = pms.linkInputPaths
+
+densities = []
+nCliques = []
+starnesses = []
+meanRichnesses = []
+meanDiversities = []
+meanRelativeDiversities = []
 
 for year, linkInputPath in zip(years,linkInputPaths):
     cfg = {}
@@ -67,21 +76,40 @@ for year, linkInputPath in zip(years,linkInputPaths):
     
     bnet = functions.createBipartite(cfg)
     bnet, nZeroDegree = functions.pruneBipartite(bnet)
-    print str(nZeroDegree) + ' zero degree nodes removed'
+#    print str(nZeroDegree) + ' zero degree nodes removed'
     density = functions.getDensity(bnet)
     print 'Density: ' + str(density)
-    #functions.getDegreeDistributions(bnet, cfg)
+    densities.append(density)
+#    #functions.getDegreeDistributions(bnet, cfg)
     functions.drawNetwork(bnet,cfg)
     cliques, cliqueInfo = functions.findBicliques(bnet)
     cliques, cliqueInfo = functions.pruneStars(bnet,cliques,cliqueInfo)
+    nCliques.append(len(cliques))
     functions.visualizeBicliques(bnet,cliqueInfo,cfg)
-    #functions.createCliqueIndexHeatmap(cliqueInfo, cfg)
+#    #functions.createCliqueIndexHeatmap(cliqueInfo, cfg)
     starness = functions.getStarness(bnet,cliqueInfo)
     print 'Starness: ' + str(starness)
+    starnesses.append(starness)
     richnesses, diversities, counts, majorFields = functions.getCliqueFieldDiversityWrapper(bnet,cliqueInfo)
+    meanRichnesses.append(np.mean(np.array(richnesses)))
+    meanDiversities.append(np.mean(np.array(diversities)))
+    relativeDiversity = np.array(diversities)/np.array(richnesses)
+    meanRelativeDiversities.append(np.mean(relativeDiversity))
     functions.plotRichnessVsDiversity(richnesses,diversities,cfg) # Note: for some reason, this command does not work nicely in Spyder (only one plot is saved). It works as it should when run from the terminal.
     functions.plotRelativeDiversity(cliques,richnesses,diversities,cfg)
     
     measures = {'starness':starness,'richness':richnesses,'diversity':diversities, 'cliques':cliques}
     
     functions.compareAgainstRandom(bnet,cfg,measures)
+    print year + ' OK'
+    
+print 'Densities:'
+print densities
+print 'Starnesses:'
+print starnesses
+print 'Mean richnesses:'
+print meanRichnesses
+print 'Mean diversities:'
+print meanDiversities
+print 'Mean relative diversities:'
+print meanRelativeDiversities

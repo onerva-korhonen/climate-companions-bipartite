@@ -195,6 +195,12 @@ def createBipartite(cfg):
     else:
         cfg['columnNames'] = ['Source','Target']
     links = readLinks(cfg)
+    for link in links:
+        source = link[0]
+        target = link[1]
+        if not source in bnet.nodes or not target in bnet.nodes:
+            print 'Error in link'
+            print link
     bnet.add_edges_from(links)
     
     return bnet

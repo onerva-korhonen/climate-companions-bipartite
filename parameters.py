@@ -36,14 +36,21 @@ def categorical_cmap(nc, nsc, cmap, continuous=False):
     return cmap
 
 # input
-companyInputPath = '/media/onerva/KINGSTON/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Members_alias.csv'
-eventInputPath = '/media/onerva/KINGSTON/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Events_alias.csv'
-linkInputPaths = ['/media/onerva/KINGSTON/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Linkit_2016.csv']
+companyInputPath = '/media/onerva/KINGSTON/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Members_alias_271018.csv'
+eventInputPath = '/media/onerva/KINGSTON/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Events_alias_271018.csv'
+linkInputPaths = ['/media/onerva/KINGSTON/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2011.csv',
+                  '/media/onerva/KINGSTON/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2012.csv',
+                  '/media/onerva/KINGSTON/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2013.csv',
+                  '/media/onerva/KINGSTON/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2014.csv',
+                  '/media/onerva/KINGSTON/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2015.csv',
+                  '/media/onerva/KINGSTON/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2016.csv',
+                  '/media/onerva/KINGSTON/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2017.csv',
+                  '/media/onerva/KINGSTON/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2018.csv']
 companyColumnNames = ['Alias:', 'Member:']
-eventColumnNames = ['Alias:', 'Event:', 'Time:','Other information:']
+eventColumnNames = ['Alias:', 'Event:']
 linkColumnNames = ['Event:', 'Participant:']
 
-years = ['2016']#['2011','2012','2013','2014','2015','2016','2017','2018','11-12','13-14','15-16','17-18','all']
+years = ['2011','2012','2013','2014','2015','2016','2017','2018']#,'11-12','13-14','15-16','17-18','all']
 
 # distributions and binning
 nDegreeBins = 50
@@ -62,7 +69,8 @@ colors = cm.get_cmap(cmap, lut=2)
 topColor = colors(0)
 bottomColor = colors(1)
 
-tags = ['R','In','Se','CB','Me','SD','L','Con','N','E','T','CT','CS','S','HKI','C','ENGO','H','II','F']
+tags = ['C','CB','Con','CS','E','ENGO','F','H','HKI','II','In','L','Me','N','R','S','SD','Se','T','V' ]
+
 #networkCMap = 'tab20'
 networkCMap = categorical_cmap(8,3,cmap='Set1')
 networkColors = cm.get_cmap('Set1', lut=len(tags))
