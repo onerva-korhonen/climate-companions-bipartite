@@ -1110,6 +1110,86 @@ def plotRelativeDiversity(cliques,richnesses,diversities,cfg):
     
     savePath = cfg['savePathBase'] + cfg['relativeDiversitySaveName']
     plt.savefig(savePath,format='pdf',bbox_inches='tight')
+
+def plotDiversityVsIndices(cliqueInfo,richnesses,diversities,cfg):
+    """
+    Plots the clique diversities (richness, effective diversity, and effective
+    diversity) as a function of the number of top and bottom nodes in the clique.
+    
+    Parameters:
+    -----------
+    cliqueInfo: list of dicts, each of them containing:
+        topNodes: list of nodes, top nodes (companies) of the clique, 
+        bottomNodes : list of nodes, bottom nodes (events) of the clique,
+        topIndex: int, number of top nodes of the clique,
+        bottomIndex: int, number of bottom nodes of the clique,
+        isBridge: boolean, does the clique consist of one top node (company) connecting multiple bottom nodes,
+        isStar: boolean, does the clique consist of node bottom node (event) connecting multiple top nodes)
+    richnesses: list of ints, numbers of different fields in the cliques
+    diversities: list of doubles, effective diversities of the cliques
+    cfg: dict, contains:
+        savePathBase: str, a base path (e.g. to a shared folder) for saving figures
+        diversityVsBottomIndexSaveName: str, file name for saving the figure of diversity vs bottom index
+        diversityVsTopIndexSaveName: str, file name for saving the figure of diveristy vs top index
+        scatterMarker: str, point marker style
+        
+    Returns:
+    --------
+    No direct output, saves the plot to the given path
+    """
+    bottomSavePath = cfg['savePathBase'] + cfg['diversityVsBottomIndexSaveName']
+    topSavePath = cfg['savePathBase'] + cfg['diversityVsTopIndexSaveName']
+    scatterMarker = cfg['scatterMarker']
+    bottomIndices = [info['bottomIndex'] for info in cliqueInfo]
+    topIndices = [info['topIndex'] for info in cliqueInfo]
+    cliqueSizes = [top + bottom for top,bottom in zip(topIndices,bottomIndices)]
+    
+    print 'Max number of events ' + str(max(bottomIndices))
+    print 'Max number of companies ' + str(max(topIndices))
+    
+    bottomFig = plt.figure()
+    bottomAx1 = bottomFig.add_subplot(221)
+    bottomAx1.plot(bottomIndices,richnesses,marker=scatterMarker,ls='')
+    bottomAx1.set_xlabel('Number of bottom nodes (events)')
+    bottomAx1.set_ylabel('Richness')
+    bottomAx2 = bottomFig.add_subplot(222)
+    bottomAx2.plot(bottomIndices,diversities,marker=scatterMarker,ls='')
+    bottomAx2.set_xlabel('Number of bottom nodes (events)')
+    bottomAx2.set_ylabel('Effective diversity')
+    bottomAx3 = bottomFig.add_subplot(223)
+    relativeDiversity = np.array(diversities)/np.array(richnesses)
+    bottomAx3.plot(bottomIndices,relativeDiversity,marker=scatterMarker,ls='')
+    bottomAx3.set_xlabel('Number of bottom nodes (events)')
+    bottomAx3.set_ylabel('Relative diversity')
+    bottomAx4 = bottomFig.add_subplot(224)
+    bottomAx4.plot(bottomIndices,cliqueSizes,marker=scatterMarker,ls='')
+    bottomAx4.set_xlabel('Number of bottom nodes (events)')
+    bottomAx4.set_ylabel('Clique size')
+    bottomFig.tight_layout()
+    plt.savefig(bottomSavePath,format='pdf',bbox_inches='tight')
+    
+    topFig = plt.figure()
+    topAx1 = topFig.add_subplot(221)
+    topAx1.plot(topIndices,richnesses,marker=scatterMarker,ls='')
+    topAx1.set_xlabel('Number of top nodes (companies)')
+    topAx1.set_ylabel('Richness')
+    topAx2 = topFig.add_subplot(222)
+    topAx2.plot(topIndices,diversities,marker=scatterMarker,ls='')
+    topAx2.set_xlabel('Number of top nodes (companies)')
+    topAx2.set_ylabel('Effective diversity')
+    topAx3 = topFig.add_subplot(223)
+    relativeDiversity = np.array(diversities)/np.array(richnesses)
+    topAx3.plot(topIndices,relativeDiversity,marker=scatterMarker,ls='')
+    topAx3.set_xlabel('Number of top nodes (companies)')
+    topAx3.set_ylabel('Relative diversity')
+    topAx4 = topFig.add_subplot(224)
+    topAx4.plot(topIndices,cliqueSizes,marker=scatterMarker,ls='')
+    topAx4.set_xlabel('Number of top nodes (companies)')
+    topAx4.set_ylabel('Clique size')
+    topFig.tight_layout()
+    plt.savefig(topSavePath,format='pdf',bbox_inches='tight')
+    
+        
     
     
     
