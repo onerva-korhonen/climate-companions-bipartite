@@ -237,6 +237,7 @@ def getDegreeDistributions(bnet, cfg):
     
     Parameters:
     -----------
+    bnet: networkx.Graph(), bipartite
     cfg: dict, contains:
         savePathBase: str, a base path (e.g. to a shared folder) for saving figures
         degreeSaveName: str, name of the file where to save the degree distribution plots
@@ -244,22 +245,30 @@ def getDegreeDistributions(bnet, cfg):
         TODO: add a possibility for different number of bins in top and bottom
         topColor: str, color for plotting the top degree distribution
         bottomColor: str, color for plotting the bottom degree distribution
-    bnet: networkx.Graph(), bipartite
         
     Returns:
     --------
-    no direct output, saves the degree distributions in a file
+    topDegrees: dict, degrees of the topNodes (companies)
+    topDistribution: np.array, degree distribution (pdf) of top nodes
+    topBinCenters: np.array, centers of bins for top nodes
+    bottomDegree: dict, degrees of the bottomNodes
+    bottomPdf: np.array, degree distribution (pdf) of bottom nodes
+    bottomBinCenters: np.array, centers of bins for bottom nodes
+    
+    Further, saves the degree distributions in a file
     """
     nBins = cfg['nDegreeBins']
     topColor = cfg['topColor']
-    bottomColor = cfg['bottomColor']   
+    bottomColor = cfg['bottomColor']  
     savePath = cfg['savePathBase'] + cfg['degreeSaveName']
     
     top, bottom = getTopAndBottom(bnet)
-    topDegree = nx.degree(bnet,top)
-    bottomDegree = nx.degree(bnet, bottom)
-    topDegree = dict(topDegree).values() # bipartite.degrees returns a DegreeView so this is required for accessing values
-    bottomDegree = dict(bottomDegree).values()
+    topDegrees = nx.degree(bnet,top)
+    topDegrees = dict(topDegrees) # bipartite.degrees returns a DegreeView so this is required for accessing values
+    bottomDegrees = nx.degree(bnet, bottom)
+    bottomDegrees = dict(bottomDegrees)
+    topDegree = topDegrees.values() 
+    bottomDegree = bottomDegrees.values()
     topPdf, topBinCenters = getDistribution(topDegree, nBins)
     bottomPdf, bottomBinCenters = getDistribution(bottomDegree, nBins)
     
@@ -279,6 +288,8 @@ def getDegreeDistributions(bnet, cfg):
     
     plt.tight_layout()
     plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    
+    return topDegrees, topPdf, topBinCenters, bottomDegrees, bottomPdf, bottomBinCenters
 
 def getDensity(bnet):
     """
@@ -294,6 +305,100 @@ def getDensity(bnet):
     top, _ = getTopAndBottom(bnet)
     d = bipartite.density(bnet,top)
     return d
+
+def findTopNodesInPercentile(bnet,lowPercentile,highPercentile,cfg):
+    """
+    Finds the top nodes that belong to the given lowest and highest percentiles
+    of the degree distribution (low and high percentiles don't need to be equal).
+    
+    Parameters:
+    -----------
+    bnet: networkx.Graph(), bipartite
+    lowPercentile: int, the percentile for the bottom (left tail) of the distribution
+                   (must be between 0 and 100)
+    highPercentile: int, the percentile for the top (right tail) of the distribution
+                   (must be between 0 and 100)
+    cfg: dict, contains:
+         savePathBase: str, a base path (e.g. to a shared folder) for saving figures
+         degreeSaveName: str, name of the file where to save the degree distribution plots
+         nDegreeBins: int, number of bins used to calculate the distributions
+         topColor: str, color for plotting the top degree distribution
+                   
+    Returns:
+    --------
+    lowPercentileNodes: list, tags of nodes in the low percentile
+    highPercentileNodes: list, tags of nodes in the high percentile
+    
+    Further, saves the top degree distribution with the percentiles marked
+    with dashed lines.
+    """
+    topDegrees,topPdf,topBinCenters,_,_,_ = getDegreeDistributions(bnet,cfg)
+    lowPercentileValue = np.percentile(topDegrees.values(),lowPercentile)
+    highPercentileValue = np.percentile(topDegrees.values(),highPercentile)
+    lowPercentileNodes = []
+    highPercentileNodes = []
+    for node, degree in topDegrees.items():
+        if degree <= lowPercentileValue:
+            lowPercentileNodes.append(node)
+        elif degree > highPercentileValue:
+            highPercentileNodes.append(node)
+            
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    plt.plot(topBinCenters, topPdf, color=cfg['topColor'], label='Companies (top nodes)')
+    plt.plot([lowPercentileValue,lowPercentileValue],[min(topPdf),max(topPdf)],ls='--',color='k')
+    ax.plot([highPercentileValue,highPercentileValue],[min(topPdf),max(topPdf)],ls='--',color='k')
+    
+    ax.set_xlabel('Degree')
+    ax.set_ylabel('PDF')
+    ax.set_title('Companies (top nodes)')
+    
+    savePath = cfg['savePathBase'] + cfg['degreeSaveName'][0:-4] + '_lowPercentile_' + str(lowPercentile) + '_highPercentile_' + str(highPercentile) + cfg['degreeSaveName'][-4::]
+    
+    plt.tight_layout()
+    plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    
+    return lowPercentileNodes,highPercentileNodes
+
+def getDegreeNodeDictionary(bnet,cfg,nameKey='Member:'):
+    """
+    Creates a dictionary where keys are degree values of top nodes (companies)
+    and values are lists of companies with the given degree. This dictionary
+    is also saved as a .csv file.
+    
+    Parameters:
+    -----------
+    bnet: nx.Graph(), a bipartite
+    nameKey: str, the key corresponding the name of the company in the node
+             attributes dictionary (default: 'Member:')
+    cfg: dict, contains (at least):
+         savePathBase: str, a base path (e.g. to a shared folder) for saving figures
+         degreeNodeDictionarySaveName: str, name of the file to which save the dictionary
+    
+    
+    Returns:
+    --------
+    degreeDict: dict where keys are degrees of top nodes and values are lists of
+                companies with the key degree
+    """
+    top, _ = getTopAndBottom(bnet)
+    topDegrees = nx.degree(bnet,top)
+    topDegrees = dict(topDegrees) # bipartite.degrees returns a DegreeView so this is required for accessing values
+    degreeKeys = np.unique(topDegrees.values())
+    degreeDict = {degreeKey:[] for degreeKey in degreeKeys}
+    for node, degree in topDegrees.items():
+        degreeDict[degree].append(bnet.nodes()[node]['Member:'])
+    saveDict = {'Degree:':[],'Number of companies:':[],'Companies:':[]}
+    for degree, companies in degreeDict.items():
+        saveDict['Degree:'].append(degree)
+        saveDict['Number of companies:'].append(len(companies))
+        saveDict['Companies:'].append(companies)
+    df = pd.DataFrame(saveDict,columns=['Degree:','Number of companies:','Companies:'])
+    savePath = cfg['savePathBase'] + cfg['degreeNodeDictionarySaveName']
+    df.to_csv(savePath,index=None,header=True)
+    
+    return degreeDict
+                
 
 # Clique analysis
     

@@ -23,65 +23,75 @@ meanRichnesses = []
 meanDiversities = []
 meanRelativeDiversities = []
 
-for year, linkInputPath in zip(years,linkInputPaths):
-    cfg = {}
+cfg = {}
 
-    cfg['companyInputPath'] = pms.companyInputPath
-    cfg['eventInputPath'] = pms.eventInputPath
+cfg['companyInputPath'] = pms.companyInputPath
+cfg['eventInputPath'] = pms.eventInputPath
+cfg['companyColumnNames'] = pms.companyColumnNames
+cfg['eventColumnNames'] = pms.eventColumnNames
+cfg['linkColumnNames'] = pms.linkColumnNames
+cfg['tags'] = pms.tags
+
+cfg['nDegreeBins'] = pms.nDegreeBins
+cfg['cliqueHeatmapTopBins'] = pms.cliqueHeatmapTopBins
+cfg['cliqueHeatmapBottomBins'] = pms.cliqueHeatmapBottomBins
+cfg['nRichnessBins'] = pms.nRichnessBins
+
+cfg['nRandomIterations'] = pms.nRandomIterations
+cfg['nRandomBins'] = pms.nRandomBins
+
+cfg['topColor'] = pms.topColor
+cfg['bottomColor'] = pms.bottomColor
+cfg['networkColors'] = pms.networkColors
+cfg['networkBottomColor'] = pms.networkBottomColor
+cfg['nodeSize'] = pms.nodeSize
+cfg['edgeWidth'] = pms.edgeWidth
+cfg['cliqueTopColor'] = pms.cliqueTopColor
+cfg['nonCliqueColor'] = pms.nonCliqueColor
+cfg['nonCliqueAlpha'] = pms.nonCliqueAlpha
+cfg['cliqueHeatmapCmap'] = pms.cliqueHeatmapCmap
+cfg['cliqueHeatmapTopTicks'] = pms.cliqueHetamapTopTicks
+cfg['cliqueHeatmapBottomTicks'] = pms.cliqueHeatmapBottomTicks
+cfg['cliqueHeatmapTopLabels'] = pms.cliqueHeatmapTopLabels
+cfg['cliqueHeatmapBottomLabels'] = pms.cliqueHeatmapBottomLabels
+cfg['identityLineStyle'] = pms.identityLineStyle
+cfg['scatterMarker'] = pms.scatterMarker
+cfg['randomColor'] = pms.randomColor
+cfg['randomMarker'] = pms.randomMarker
+cfg['randomAlpha'] = pms.randomAlpha
+cfg['dataColor'] = pms.dataColor
+cfg['dataMarker'] = pms.dataMarker
+cfg['dataLineWidth'] = pms.dataLineWidth
+
+cfg['savePathBase'] = pms.savePathBase
+
+for year, linkInputPath in zip(years,linkInputPaths):
+    
     cfg['linkInputPath'] = linkInputPath
-    cfg['companyColumnNames'] = pms.companyColumnNames
-    cfg['eventColumnNames'] = pms.eventColumnNames
-    cfg['linkColumnNames'] = pms.linkColumnNames
-    cfg['tags'] = pms.tags
     
-    cfg['nDegreeBins'] = pms.nDegreeBins
-    cfg['cliqueHeatmapTopBins'] = pms.cliqueHeatmapTopBins
-    cfg['cliqueHeatmapBottomBins'] = pms.cliqueHeatmapBottomBins
-    cfg['nRichnessBins'] = pms.nRichnessBins
-    
-    cfg['nRandomIterations'] = pms.nRandomIterations
-    cfg['nRandomBins'] = pms.nRandomBins
-    
-    cfg['topColor'] = pms.topColor
-    cfg['bottomColor'] = pms.bottomColor
-    cfg['networkColors'] = pms.networkColors
-    cfg['networkBottomColor'] = pms.networkBottomColor
-    cfg['nodeSize'] = pms.nodeSize
-    cfg['edgeWidth'] = pms.edgeWidth
-    cfg['cliqueTopColor'] = pms.cliqueTopColor
-    cfg['nonCliqueColor'] = pms.nonCliqueColor
-    cfg['nonCliqueAlpha'] = pms.nonCliqueAlpha
-    cfg['cliqueHeatmapCmap'] = pms.cliqueHeatmapCmap
-    cfg['cliqueHeatmapTopTicks'] = pms.cliqueHetamapTopTicks
-    cfg['cliqueHeatmapBottomTicks'] = pms.cliqueHeatmapBottomTicks
-    cfg['cliqueHeatmapTopLabels'] = pms.cliqueHeatmapTopLabels
-    cfg['cliqueHeatmapBottomLabels'] = pms.cliqueHeatmapBottomLabels
-    cfg['identityLineStyle'] = pms.identityLineStyle
-    cfg['scatterMarker'] = pms.scatterMarker
-    cfg['randomColor'] = pms.randomColor
-    cfg['randomMarker'] = pms.randomMarker
-    cfg['randomAlpha'] = pms.randomAlpha
-    cfg['dataColor'] = pms.dataColor
-    cfg['dataMarker'] = pms.dataMarker
-    cfg['dataLineWidth'] = pms.dataLineWidth
-    
-    cfg['savePathBase'] = pms.savePathBase
     cfg['degreeSaveName'] = pms.degreeSaveName + '_' + year + '.pdf'
+    cfg['degreeNodeDictionarySaveName'] = pms.degreeNodeDictionarySaveName + '_' + year + '.csv'
     cfg['networkSaveName'] = pms.networkSaveName + '_' + year + '.pdf'
     cfg['cliquesSaveName'] = pms.cliqueSaveName + '_' + year
     cfg['cliqueHeatmapSaveName'] = pms.cliqueHeatmapSaveName + '_' + year + '.pdf'
     cfg['diversitySaveName'] = pms.diversitySaveName + '_' + year + '.pdf' 
-    cfg['comparisonVsRandomSaveName'] = pms.comparisonVsRandomSaveName + year
-    cfg['relativeDiversitySaveName'] = pms.relativeDiversitySaveName + year
+    cfg['comparisonVsRandomSaveName'] = pms.comparisonVsRandomSaveName + '_' + year
+    cfg['relativeDiversitySaveName'] = pms.relativeDiversitySaveName + '_' + year
+    cfg['diversityVsBottomIndexSaveName'] = pms.diversityVsBottomIndexSaveName + '_' + year + '.pdf'
+    cfg['diversityVsTopIndexSaveName'] = pms.diversityVsTopIndexSaveName + '_' + year + '.pdf'
     
     bnet = functions.createBipartite(cfg)
+    import pdb; pdb.set_trace()
+    degreeDict = functions.getDegreeNodeDictionary(bnet,cfg)
     bnet, nZeroDegree = functions.pruneBipartite(bnet)
+    
+    lowPercentileNodes,highPercentileNodes = functions.findTopNodesInPercentile(bnet,pms.lowDegreePercentile,pms.highDegreePercentile,cfg)
 #    print str(nZeroDegree) + ' zero degree nodes removed'
     density = functions.getDensity(bnet)
     print 'Density: ' + str(density)
     densities.append(density)
-#    #functions.getDegreeDistributions(bnet, cfg)
-    functions.drawNetwork(bnet,cfg)
+    #topDegrees, bottomDegrees = functions.getDegreeDistributions(bnet, cfg)    
+    #functions.drawNetwork(bnet,cfg)
     cliques, cliqueInfo = functions.findBicliques(bnet)
     nCliques.append(len(cliques))
     richnesses, diversities, counts, majorFields = functions.getCliqueFieldDiversityWrapper(bnet,cliqueInfo)
@@ -89,24 +99,25 @@ for year, linkInputPath in zip(years,linkInputPaths):
     meanDiversities.append(np.mean(np.array(diversities)))
     relativeDiversity = np.array(diversities)/np.array(richnesses)
     meanRelativeDiversities.append(np.mean(relativeDiversity))
-    functions.plotRichnessVsDiversity(richnesses,diversities,cfg) # Note: for some reason, this command does not work nicely in Spyder (only one plot is saved). It works as it should when run from the terminal.
-    functions.plotRelativeDiversity(cliques,richnesses,diversities,cfg)
+    #functions.plotRichnessVsDiversity(richnesses,diversities,cfg) # Note: for some reason, this command does not work nicely in Spyder (only one plot is saved). It works as it should when run from the terminal.
+    #functions.plotRelativeDiversity(cliques,richnesses,diversities,cfg)
+    functions.plotDiversityVsIndices(cliqueInfo,richnesses,diversities,cfg)
+    functions.createCliqueIndexHeatmap(cliqueInfo, cfg)
     
     measures = {'richness':richnesses,'diversity':diversities, 'cliques':cliques}
     
-    functions.compareAgainstRandom(bnet,cfg,measures)
+    #functions.compareAgainstRandom(bnet,cfg,measures)
     
     # for analyzing starness, let's remove from stars the nodes that participate also in other cliques
     cliques, cliqueInfo = functions.pruneStars(bnet,cliques,cliqueInfo)
-    functions.visualizeBicliques(bnet,cliqueInfo,cfg)
-#    #functions.createCliqueIndexHeatmap(cliqueInfo, cfg)
+    #functions.visualizeBicliques(bnet,cliqueInfo,cfg)
     starness = functions.getStarness(bnet,cliqueInfo)
     print 'Starness: ' + str(starness)
     starnesses.append(starness)
     
     measures = {'starness':starness}
     
-    functions.compareAgainstRandom(bnet,cfg,measures)
+    #functions.compareAgainstRandom(bnet,cfg,measures)
     print year + ' OK'
     
 print 'Densities:'

@@ -41,7 +41,7 @@ eventInputPath = '/media/onerva/KINGSTON/aallon-tyokoneelta/lappari/misc_project
 linkInputPaths = ['/media/onerva/KINGSTON/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_all_271018.csv']#,
 #                  '/media/onerva/KINGSTON/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2013_2014.csv',
 #                  '/media/onerva/KINGSTON/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2015_2016.csv',
-#                  '/media/onerva/KINGSTON/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2017_2018.csv',
+                  
 #                  '/media/onerva/KINGSTON/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_all_271018.csv']
         
         #'/media/onerva/KINGSTON/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_all_271018.csv']
@@ -71,10 +71,13 @@ linkColumnNames = ['Event:', 'Participant:']
 years = ['all']#['11-12','13-14','15-16','17-18','all']
 
 # distributions and binning
-nDegreeBins = 50
+nDegreeBins = 20
 cliqueHeatmapBottomBins = np.arange(0.5,16.5,1)
 cliqueHeatmapTopBins = np.arange(0.5,68.5,1)
 nRichnessBins = 5
+
+lowDegreePercentile = 25
+highDegreePercentile = 75
 
 # comparison against random
 
@@ -122,6 +125,7 @@ randomAlpha = 0.2
 # save paths
 savePathBase = '/media/onerva/KINGSTON/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/'
 degreeSaveName = 'degree-distributions'
+degreeNodeDictionarySaveName = 'companies-per-degree'
 networkSaveName = 'network'
 cliqueSaveName = 'network-cliques'
 cliqueHeatmapSaveName = 'clique-heatmap'
