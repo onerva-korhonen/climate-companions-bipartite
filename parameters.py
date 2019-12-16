@@ -58,13 +58,16 @@ companyColumnNames = ['Alias:', 'Member:']
 eventColumnNames = ['Alias:', 'Event:']
 linkColumnNames = ['Event:', 'Participant:']
 
-years = ['2011','2012','2013','2014','2015','2016','2017','2018','11-12','13-14','15-16','17-18','all']
+years = ['all']#['11-12','13-14','15-16','17-18','all']
 
 # distributions and binning
-nDegreeBins = 50
-cliqueHeatmapBottomBins = np.arange(0.5,5.5,1)
-cliqueHeatmapTopBins = np.arange(0.5,51.5,1)
+nDegreeBins = 20
+cliqueHeatmapBottomBins = np.arange(0.5,16.5,1)
+cliqueHeatmapTopBins = np.arange(0.5,68.5,1)
 nRichnessBins = 5
+
+lowDegreePercentile = 25
+highDegreePercentile = 75
 
 # comparison against random
 
@@ -91,10 +94,10 @@ nonCliqueColor = 'k'
 nonCliqueAlpha = 0.5
 
 cliqueHeatmapCmap = 'cool'
-cliqueHetamapTopTicks = [0,9,19,29,39,49]
-cliqueHeatmapBottomTicks = [0,1,2,3]
-cliqueHeatmapTopLabels = ['1','10','20','30','40','50']
-cliqueHeatmapBottomLabels = ['1','2','3','4']
+cliqueHetamapTopTicks = [0,9,19,29,39,49,59]
+cliqueHeatmapBottomTicks = range(0,15)
+cliqueHeatmapTopLabels = ['1','10','20','30','40','50','60']
+cliqueHeatmapBottomLabels = [str(tick+1) for tick in cliqueHeatmapBottomTicks]
 
 identityLineStyle = '--'
 scatterMarker = '*'
@@ -112,9 +115,12 @@ randomAlpha = 0.2
 # save paths
 savePathBase = '/media/onerva/KINGSTON/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/'
 degreeSaveName = 'degree-distributions'
+degreeNodeDictionarySaveName = 'companies-per-degree'
 networkSaveName = 'network'
 cliqueSaveName = 'network-cliques'
 cliqueHeatmapSaveName = 'clique-heatmap'
 diversitySaveName = 'richness-vs-diversity'
 comparisonVsRandomSaveName = 'comparison-vs-random'
 relativeDiversitySaveName = 'relative-diversity'
+diversityVsBottomIndexSaveName = 'diversity-vs-n-events'
+diversityVsTopIndexSaveName = 'diveristy-vs-n-companies'

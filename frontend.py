@@ -39,17 +39,34 @@ if numbersOnly:
     cfg['topColor'] = pms.topColor
     cfg['networkColors'] = pms.networkColors
     cfg['networkBottomColor'] = pms.networkBottomColor
-     
-    bnet = functions.createBipartite(cfg)
-    bnet, nZeroDegree = functions.pruneBipartite(bnet)
-     
-    top,bottom = functions.getTopAndBottom(bnet)
-    cliqueInfo = {'topNodes':top,'bottomNodes':bottom,'topIndex':len(top),'bottomIndex':len(bottom),'isBridge':False,'isStar':False}
+
+    for year, linkInputPath in zip(years,linkInputPaths):
+        
+        cfg['linkInputPath'] = linkInputPath
+        
+        cfg['degreeSaveName'] = pms.degreeSaveName + '_' + year + '.pdf'
+        cfg['degreeNodeDictionarySaveName'] = pms.degreeNodeDictionarySaveName + '_' + year + '.csv'
+        cfg['networkSaveName'] = pms.networkSaveName + '_' + year + '.pdf'
+        cfg['cliquesSaveName'] = pms.cliqueSaveName + '_' + year
+        cfg['cliqueHeatmapSaveName'] = pms.cliqueHeatmapSaveName + '_' + year + '.pdf'
+        cfg['diversitySaveName'] = pms.diversitySaveName + '_' + year + '.pdf' 
+        cfg['comparisonVsRandomSaveName'] = pms.comparisonVsRandomSaveName + '_' + year
+        cfg['relativeDiversitySaveName'] = pms.relativeDiversitySaveName + '_' + year
+        cfg['diversityVsBottomIndexSaveName'] = pms.diversityVsBottomIndexSaveName + '_' + year + '.pdf'
+        cfg['diversityVsTopIndexSaveName'] = pms.diversityVsTopIndexSaveName + '_' + year + '.pdf'
     
-    richness, cliqueDiversity, count, majorField = functions.getCliqueFieldDiversity(bnet,cliqueInfo)
+        bnet = functions.createBipartite(cfg)
+        import pdb; pdb.set_trace()
+        degreeDict = functions.getDegreeNodeDictionary(bnet,cfg)
+        bnet, nZeroDegree = functions.pruneBipartite(bnet)
+     
+        top,bottom = functions.getTopAndBottom(bnet)
+        cliqueInfo = {'topNodes':top,'bottomNodes':bottom,'topIndex':len(top),'bottomIndex':len(bottom),'isBridge':False,'isStar':False}
     
-    print 'Diversity of full network: richness: ' + str(richness) + ', effective diversity: ' + str(cliqueDiversity) + ', relative diversity: ' + str(cliqueDiversity/richness)
-    print str(nZeroDegree) + ' zero-degree nodes found'
+        richness, cliqueDiversity, count, majorField = functions.getCliqueFieldDiversity(bnet,cliqueInfo)
+    
+        print 'Diversity of full network: richness: ' + str(richness) + ', effective diversity: ' + str(cliqueDiversity) + ', relative diversity: ' + str(cliqueDiversity/richness)
+        print str(nZeroDegree) + ' zero-degree nodes found'
     
     topNodes = []
     
@@ -65,8 +82,7 @@ if numbersOnly:
         for j,yearj in enumerate(years):
             jaccard = functions.getJaccardIndex(topNodes[i],topNodes[j])
             print 'Jaccard index, years ' + yeari + ', ' + yearj + ': ' + str(jaccard)
-    
-    
+
 else:   
     for year, linkInputPath in zip(years,linkInputPaths):
         cfg = {}
@@ -122,6 +138,7 @@ else:
         bnet = functions.createBipartite(cfg)
         bnet, nZeroDegree = functions.pruneBipartite(bnet)
     #    print str(nZeroDegree) + ' zero degree nodes removed'
+        lowPercentileNodes,highPercentileNodes = functions.findTopNodesInPercentile(bnet,pms.lowDegreePercentile,pms.highDegreePercentile,cfg)
         density = functions.getDensity(bnet)
         print 'Density: ' + str(density)
         densities.append(density)
@@ -136,6 +153,8 @@ else:
         meanRelativeDiversities.append(np.mean(relativeDiversity))
         functions.plotRichnessVsDiversity(richnesses,diversities,cfg) # Note: for some reason, this command does not work nicely in Spyder (only one plot is saved). It works as it should when run from the terminal.
         functions.plotRelativeDiversity(cliques,richnesses,diversities,cfg)
+        functions.plotDiversityVsIndices(cliqueInfo,richnesses,diversities,cfg)
+        functions.createCliqueIndexHeatmap(cliqueInfo, cfg)        
         
         measures = {'richness':richnesses,'diversity':diversities, 'cliques':cliques}
         

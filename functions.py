@@ -237,6 +237,7 @@ def getDegreeDistributions(bnet, cfg):
     
     Parameters:
     -----------
+    bnet: networkx.Graph(), bipartite
     cfg: dict, contains:
         savePathBase: str, a base path (e.g. to a shared folder) for saving figures
         degreeSaveName: str, name of the file where to save the degree distribution plots
@@ -244,22 +245,30 @@ def getDegreeDistributions(bnet, cfg):
         TODO: add a possibility for different number of bins in top and bottom
         topColor: str, color for plotting the top degree distribution
         bottomColor: str, color for plotting the bottom degree distribution
-    bnet: networkx.Graph(), bipartite
         
     Returns:
     --------
-    no direct output, saves the degree distributions in a file
+    topDegrees: dict, degrees of the topNodes (companies)
+    topDistribution: np.array, degree distribution (pdf) of top nodes
+    topBinCenters: np.array, centers of bins for top nodes
+    bottomDegree: dict, degrees of the bottomNodes
+    bottomPdf: np.array, degree distribution (pdf) of bottom nodes
+    bottomBinCenters: np.array, centers of bins for bottom nodes
+    
+    Further, saves the degree distributions in a file
     """
     nBins = cfg['nDegreeBins']
     topColor = cfg['topColor']
-    bottomColor = cfg['bottomColor']   
+    bottomColor = cfg['bottomColor']  
     savePath = cfg['savePathBase'] + cfg['degreeSaveName']
     
     top, bottom = getTopAndBottom(bnet)
-    topDegree = nx.degree(bnet,top)
-    bottomDegree = nx.degree(bnet, bottom)
-    topDegree = dict(topDegree).values() # bipartite.degrees returns a DegreeView so this is required for accessing values
-    bottomDegree = dict(bottomDegree).values()
+    topDegrees = nx.degree(bnet,top)
+    topDegrees = dict(topDegrees) # bipartite.degrees returns a DegreeView so this is required for accessing values
+    bottomDegrees = nx.degree(bnet, bottom)
+    bottomDegrees = dict(bottomDegrees)
+    topDegree = topDegrees.values() 
+    bottomDegree = bottomDegrees.values()
     topPdf, topBinCenters = getDistribution(topDegree, nBins)
     bottomPdf, bottomBinCenters = getDistribution(bottomDegree, nBins)
     
@@ -279,6 +288,8 @@ def getDegreeDistributions(bnet, cfg):
     
     plt.tight_layout()
     plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    
+    return topDegrees, topPdf, topBinCenters, bottomDegrees, bottomPdf, bottomBinCenters
 
 def getDensity(bnet):
     """
@@ -294,6 +305,100 @@ def getDensity(bnet):
     top, _ = getTopAndBottom(bnet)
     d = bipartite.density(bnet,top)
     return d
+
+def findTopNodesInPercentile(bnet,lowPercentile,highPercentile,cfg):
+    """
+    Finds the top nodes that belong to the given lowest and highest percentiles
+    of the degree distribution (low and high percentiles don't need to be equal).
+    
+    Parameters:
+    -----------
+    bnet: networkx.Graph(), bipartite
+    lowPercentile: int, the percentile for the bottom (left tail) of the distribution
+                   (must be between 0 and 100)
+    highPercentile: int, the percentile for the top (right tail) of the distribution
+                   (must be between 0 and 100)
+    cfg: dict, contains:
+         savePathBase: str, a base path (e.g. to a shared folder) for saving figures
+         degreeSaveName: str, name of the file where to save the degree distribution plots
+         nDegreeBins: int, number of bins used to calculate the distributions
+         topColor: str, color for plotting the top degree distribution
+                   
+    Returns:
+    --------
+    lowPercentileNodes: list, tags of nodes in the low percentile
+    highPercentileNodes: list, tags of nodes in the high percentile
+    
+    Further, saves the top degree distribution with the percentiles marked
+    with dashed lines.
+    """
+    topDegrees,topPdf,topBinCenters,_,_,_ = getDegreeDistributions(bnet,cfg)
+    lowPercentileValue = np.percentile(topDegrees.values(),lowPercentile)
+    highPercentileValue = np.percentile(topDegrees.values(),highPercentile)
+    lowPercentileNodes = []
+    highPercentileNodes = []
+    for node, degree in topDegrees.items():
+        if degree <= lowPercentileValue:
+            lowPercentileNodes.append(node)
+        elif degree > highPercentileValue:
+            highPercentileNodes.append(node)
+            
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    plt.plot(topBinCenters, topPdf, color=cfg['topColor'], label='Companies (top nodes)')
+    plt.plot([lowPercentileValue,lowPercentileValue],[min(topPdf),max(topPdf)],ls='--',color='k')
+    ax.plot([highPercentileValue,highPercentileValue],[min(topPdf),max(topPdf)],ls='--',color='k')
+    
+    ax.set_xlabel('Degree')
+    ax.set_ylabel('PDF')
+    ax.set_title('Companies (top nodes)')
+    
+    savePath = cfg['savePathBase'] + cfg['degreeSaveName'][0:-4] + '_lowPercentile_' + str(lowPercentile) + '_highPercentile_' + str(highPercentile) + cfg['degreeSaveName'][-4::]
+    
+    plt.tight_layout()
+    plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    
+    return lowPercentileNodes,highPercentileNodes
+
+def getDegreeNodeDictionary(bnet,cfg,nameKey='Member:'):
+    """
+    Creates a dictionary where keys are degree values of top nodes (companies)
+    and values are lists of companies with the given degree. This dictionary
+    is also saved as a .csv file.
+    
+    Parameters:
+    -----------
+    bnet: nx.Graph(), a bipartite
+    nameKey: str, the key corresponding the name of the company in the node
+             attributes dictionary (default: 'Member:')
+    cfg: dict, contains (at least):
+         savePathBase: str, a base path (e.g. to a shared folder) for saving figures
+         degreeNodeDictionarySaveName: str, name of the file to which save the dictionary
+    
+    
+    Returns:
+    --------
+    degreeDict: dict where keys are degrees of top nodes and values are lists of
+                companies with the key degree
+    """
+    top, _ = getTopAndBottom(bnet)
+    topDegrees = nx.degree(bnet,top)
+    topDegrees = dict(topDegrees) # bipartite.degrees returns a DegreeView so this is required for accessing values
+    degreeKeys = np.unique(topDegrees.values())
+    degreeDict = {degreeKey:[] for degreeKey in degreeKeys}
+    for node, degree in topDegrees.items():
+        degreeDict[degree].append(bnet.nodes()[node]['Member:'])
+    saveDict = {'Degree:':[],'Number of companies:':[],'Companies:':[]}
+    for degree, companies in degreeDict.items():
+        saveDict['Degree:'].append(degree)
+        saveDict['Number of companies:'].append(len(companies))
+        saveDict['Companies:'].append(companies)
+    df = pd.DataFrame(saveDict,columns=['Degree:','Number of companies:','Companies:'])
+    savePath = cfg['savePathBase'] + cfg['degreeNodeDictionarySaveName']
+    df.to_csv(savePath,index=None,header=True)
+    
+    return degreeDict
+                
 
 # Clique analysis
     
@@ -1110,6 +1215,86 @@ def plotRelativeDiversity(cliques,richnesses,diversities,cfg):
     
     savePath = cfg['savePathBase'] + cfg['relativeDiversitySaveName']
     plt.savefig(savePath,format='pdf',bbox_inches='tight')
+
+def plotDiversityVsIndices(cliqueInfo,richnesses,diversities,cfg):
+    """
+    Plots the clique diversities (richness, effective diversity, and effective
+    diversity) as a function of the number of top and bottom nodes in the clique.
+    
+    Parameters:
+    -----------
+    cliqueInfo: list of dicts, each of them containing:
+        topNodes: list of nodes, top nodes (companies) of the clique, 
+        bottomNodes : list of nodes, bottom nodes (events) of the clique,
+        topIndex: int, number of top nodes of the clique,
+        bottomIndex: int, number of bottom nodes of the clique,
+        isBridge: boolean, does the clique consist of one top node (company) connecting multiple bottom nodes,
+        isStar: boolean, does the clique consist of node bottom node (event) connecting multiple top nodes)
+    richnesses: list of ints, numbers of different fields in the cliques
+    diversities: list of doubles, effective diversities of the cliques
+    cfg: dict, contains:
+        savePathBase: str, a base path (e.g. to a shared folder) for saving figures
+        diversityVsBottomIndexSaveName: str, file name for saving the figure of diversity vs bottom index
+        diversityVsTopIndexSaveName: str, file name for saving the figure of diveristy vs top index
+        scatterMarker: str, point marker style
+        
+    Returns:
+    --------
+    No direct output, saves the plot to the given path
+    """
+    bottomSavePath = cfg['savePathBase'] + cfg['diversityVsBottomIndexSaveName']
+    topSavePath = cfg['savePathBase'] + cfg['diversityVsTopIndexSaveName']
+    scatterMarker = cfg['scatterMarker']
+    bottomIndices = [info['bottomIndex'] for info in cliqueInfo]
+    topIndices = [info['topIndex'] for info in cliqueInfo]
+    cliqueSizes = [top + bottom for top,bottom in zip(topIndices,bottomIndices)]
+    
+    print 'Max number of events ' + str(max(bottomIndices))
+    print 'Max number of companies ' + str(max(topIndices))
+    
+    bottomFig = plt.figure()
+    bottomAx1 = bottomFig.add_subplot(221)
+    bottomAx1.plot(bottomIndices,richnesses,marker=scatterMarker,ls='')
+    bottomAx1.set_xlabel('Number of bottom nodes (events)')
+    bottomAx1.set_ylabel('Richness')
+    bottomAx2 = bottomFig.add_subplot(222)
+    bottomAx2.plot(bottomIndices,diversities,marker=scatterMarker,ls='')
+    bottomAx2.set_xlabel('Number of bottom nodes (events)')
+    bottomAx2.set_ylabel('Effective diversity')
+    bottomAx3 = bottomFig.add_subplot(223)
+    relativeDiversity = np.array(diversities)/np.array(richnesses)
+    bottomAx3.plot(bottomIndices,relativeDiversity,marker=scatterMarker,ls='')
+    bottomAx3.set_xlabel('Number of bottom nodes (events)')
+    bottomAx3.set_ylabel('Relative diversity')
+    bottomAx4 = bottomFig.add_subplot(224)
+    bottomAx4.plot(bottomIndices,cliqueSizes,marker=scatterMarker,ls='')
+    bottomAx4.set_xlabel('Number of bottom nodes (events)')
+    bottomAx4.set_ylabel('Clique size')
+    bottomFig.tight_layout()
+    plt.savefig(bottomSavePath,format='pdf',bbox_inches='tight')
+    
+    topFig = plt.figure()
+    topAx1 = topFig.add_subplot(221)
+    topAx1.plot(topIndices,richnesses,marker=scatterMarker,ls='')
+    topAx1.set_xlabel('Number of top nodes (companies)')
+    topAx1.set_ylabel('Richness')
+    topAx2 = topFig.add_subplot(222)
+    topAx2.plot(topIndices,diversities,marker=scatterMarker,ls='')
+    topAx2.set_xlabel('Number of top nodes (companies)')
+    topAx2.set_ylabel('Effective diversity')
+    topAx3 = topFig.add_subplot(223)
+    relativeDiversity = np.array(diversities)/np.array(richnesses)
+    topAx3.plot(topIndices,relativeDiversity,marker=scatterMarker,ls='')
+    topAx3.set_xlabel('Number of top nodes (companies)')
+    topAx3.set_ylabel('Relative diversity')
+    topAx4 = topFig.add_subplot(224)
+    topAx4.plot(topIndices,cliqueSizes,marker=scatterMarker,ls='')
+    topAx4.set_xlabel('Number of top nodes (companies)')
+    topAx4.set_ylabel('Clique size')
+    topFig.tight_layout()
+    plt.savefig(topSavePath,format='pdf',bbox_inches='tight')
+    
+        
     
     
     
