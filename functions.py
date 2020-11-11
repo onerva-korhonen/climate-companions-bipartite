@@ -680,7 +680,7 @@ def getCliqueFieldDiversity(bnet,cliqueInfo):
         topIndex: int, number of top nodes of the clique,
         bottomIndex: int, number of bottom nodes of the clique,
         isBridge: boolean, does the clique consist of one top node (company) connecting multiple bottom nodes,
-        isStar: boolean, does the clique consist of node bottom node (event) connecting multiple top nodes)
+        isStar: boolean, does the clique consist of node bottom node (event) connecting multiple top nodes
     
     Returns:
     --------

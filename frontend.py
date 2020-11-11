@@ -16,6 +16,8 @@ import numpy as np
 years = pms.years
 linkInputPaths = pms.linkInputPaths
 
+topNodes = []
+
 densities = []
 nCliques = []
 starnesses = []
@@ -23,7 +25,7 @@ meanRichnesses = []
 meanDiversities = []
 meanRelativeDiversities = []
 
-numbersOnly = True
+numbersOnly = False
 
 if numbersOnly:
     cfg = {}
@@ -44,6 +46,7 @@ if numbersOnly:
         
         cfg['linkInputPath'] = linkInputPath
         
+        cfg['savePathBase'] = pms.savePathBase
         cfg['degreeSaveName'] = pms.degreeSaveName + '_' + year + '.pdf'
         cfg['degreeNodeDictionarySaveName'] = pms.degreeNodeDictionarySaveName + '_' + year + '.csv'
         cfg['networkSaveName'] = pms.networkSaveName + '_' + year + '.pdf'
@@ -56,27 +59,19 @@ if numbersOnly:
         cfg['diversityVsTopIndexSaveName'] = pms.diversityVsTopIndexSaveName + '_' + year + '.pdf'
     
         bnet = functions.createBipartite(cfg)
-        import pdb; pdb.set_trace()
+        #import pdb; pdb.set_trace()
         degreeDict = functions.getDegreeNodeDictionary(bnet,cfg)
         bnet, nZeroDegree = functions.pruneBipartite(bnet)
      
         top,bottom = functions.getTopAndBottom(bnet)
+        topNodes.append(top)
+        
         cliqueInfo = {'topNodes':top,'bottomNodes':bottom,'topIndex':len(top),'bottomIndex':len(bottom),'isBridge':False,'isStar':False}
     
         richness, cliqueDiversity, count, majorField = functions.getCliqueFieldDiversity(bnet,cliqueInfo)
     
-        print 'Diversity of full network: richness: ' + str(richness) + ', effective diversity: ' + str(cliqueDiversity) + ', relative diversity: ' + str(cliqueDiversity/richness)
+        print 'Diversity of full network in year(s) ' + year + ': richness: ' + str(richness) + ', effective diversity: ' + str(cliqueDiversity) + ', relative diversity: ' + str(cliqueDiversity/richness)
         print str(nZeroDegree) + ' zero-degree nodes found'
-    
-    topNodes = []
-    
-    for linkInputPath in linkInputPaths:
-        cfg['linkInputPath'] = linkInputPath
-        bnet = functions.createBipartite(cfg)
-        bnet, nZeroDegree = functions.pruneBipartite(bnet)
-        
-        top,bottom = functions.getTopAndBottom(bnet)
-        topNodes.append(top)
     
     for i,yeari in enumerate(years):
         for j,yearj in enumerate(years):
@@ -133,7 +128,9 @@ else:
         cfg['cliqueHeatmapSaveName'] = pms.cliqueHeatmapSaveName + '_' + year + '.pdf'
         cfg['diversitySaveName'] = pms.diversitySaveName + '_' + year + '.pdf' 
         cfg['comparisonVsRandomSaveName'] = pms.comparisonVsRandomSaveName + year
-        cfg['relativeDiversitySaveName'] = pms.relativeDiversitySaveName + year
+        cfg['relativeDiversitySaveName'] = pms.relativeDiversitySaveName + year + '.pdf'
+        cfg['diversityVsBottomIndexSaveName'] = pms.diversityVsBottomIndexSaveName + '_' + year + '.pdf'
+        cfg['diversityVsTopIndexSaveName'] = pms.diversityVsTopIndexSaveName + '_' + year + '.pdf'
         
         bnet = functions.createBipartite(cfg)
         bnet, nZeroDegree = functions.pruneBipartite(bnet)
