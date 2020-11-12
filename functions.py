@@ -603,18 +603,21 @@ def getCliqueIndices(bnet, cliques):
     
     return cliqueInfo
     
-def pruneStars(bnet, cliques, cliqueInfo):
+def pruneStars(bnet, cliques, cliqueInfo, nonMemberClass='NM'):
     """
     Removes from bistars all top nodes (companies) that participate in any other
-    cliques besides the bistar. Bistar is a clique where one bottom node (event)
+    cliques besides the bistar, as well as all top nodes whose membership class
+    matches the non-member class. Bistar is a clique where one bottom node (event)
     is surrounded by multiple top nodes (companies). If all top nodes of the bistar
     are removed, the whole star is removed.
     
     Parameters:
     -----------
-    bnet: networx.Graph(), a bipartite
-    cliques: list of lists, cliques of bnet; each clique is represented as a 
-             list containing the nodes of the clique
+    bnet: networx.Graph()
+        a bipartite
+    cliques: list of lists
+        cliques of bnet; each clique is represented as a 
+        list containing the nodes of the clique
     cliqueInfo: list of dicts; each dict contains one clique separated to top and
                 bottom nodes (keys: 'topNodes': top nodes (companies) of the clique, 
                                     'bottomNodes' : bottom nodes (events) of the clique,
@@ -622,6 +625,10 @@ def pruneStars(bnet, cliques, cliqueInfo):
                                     'bottomIndex': number of bottom nodes of the clique,
                                     'isBridge': does the clique consist of one top node (company) connecting multiple bottom nodes,
                                     'isStar': does the clique consist of node bottom node (event) connecting multiple top nodes)
+    nonMemberClass: str
+        the membership class (class attribute) of those nodes that should be
+        removed from stars. Non-member companies or instances often
+        participate only one event and therefore artificially increase starness.
     
     Returns:
     --------
@@ -640,6 +647,8 @@ def pruneStars(bnet, cliques, cliqueInfo):
             topToRemove = []
             for top in info['topNodes']:
                 if nx.degree(bnet,top) > 1:
+                    topToRemove.append(top)
+                if bnet.nodes(data=True)[top]['class'] == nonMemberClass:
                     topToRemove.append(top)
             if len(topToRemove) == len(info['topNodes']): # if all the top nodes of a clique are to be removed, let's remove the whole clique
                 bottomOnlyCliques.append(clique)

@@ -93,6 +93,7 @@ else:
         cfg['linkColumnNames'] = pms.linkColumnNames
         cfg['tags'] = pms.tags
         cfg['classes'] = pms.membershipClasses
+        cfg['nonMemberClass'] = pms.nonMemberClass
         
         cfg['nDegreeBins'] = pms.nDegreeBins
         cfg['cliqueHeatmapTopBins'] = pms.cliqueHeatmapTopBins

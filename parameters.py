@@ -126,6 +126,7 @@ bottomColor = colors(1)
 
 tags = ['C','CB','Con','CS','E','ENGO','F','H','HKI','II','In','L','Me','N','R','S','SD','Se','T','V' ]
 membershipClasses = ['BM','OM','NM']
+nonMemberClass = 'NM'
 # TODO: fix
 
 #networkCMap = 'tab20'
