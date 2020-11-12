@@ -1134,13 +1134,26 @@ def drawNetwork(bnet, cfg):
     -----------
     bnet: networkx.Graph(), the bipartite to be visualized
     cfg: dict, contains:
-        tags: list of strs, the field of business tags
-        networkColors: matplotlib.cmap, colors associated with different fields of business
-        bottomNetworkColor: str, color of the bottom nodes (events)
-        nodeSize: int, size of nodes in the visualization
-        edgeWidth: double, width of network edges
-        savePathBase: str, a base path (e.g. to a shared folder) for saving figures
-        networkSaveName: str, name of the file where to save the network visualization
+        tags: list of strs
+            the field of business tags
+        classes: list of strs
+            the possible membership classes
+        networkColors: matplotlib.cmap
+            colors associated with different fields of business
+        bottomNetworkColor: str
+            color of the bottom nodes (events)
+        nodeShapes: list of strs
+            shapes associated with the different membership classes
+        bottomShape: str
+            the shape of bottom (event) nodes
+        nodeSize: int
+            size of nodes in the visualization
+        edgeWidth: double
+            width of network edges
+        savePathBase: str
+            a base path (e.g. to a shared folder) for saving figures
+        networkSaveName: str
+            name of the file where to save the network visualization
         
     Returns:
     --------
@@ -1148,8 +1161,11 @@ def drawNetwork(bnet, cfg):
     """
     
     tags = cfg['tags']    
+    classes = cfg['classes']
     networkColors = cfg['networkColors']
     bottomColor = cfg['networkBottomColor']
+    nodeShapes = cfg['nodeShapes']
+    bottomShape = cfg['bottomShape']
     nodeSize = cfg['nodeSize']
     edgeWidth = cfg['edgeWidth']
     
@@ -1160,14 +1176,17 @@ def drawNetwork(bnet, cfg):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     
-    nx.draw_networkx_nodes(bnet,pos,ax=ax,nodelist=bottom,node_color=bottomColor,node_size=nodeSize,label='Events)')
+    nx.draw_networkx_nodes(bnet,pos,ax=ax,nodelist=bottom,node_color=bottomColor,node_shape=bottomShape,
+                           node_size=nodeSize,label='Events)')
     
     for i, tag in enumerate(tags):
-        taggedNodes = []
-        for topn in top:
-            if bnet.nodes(data=True)[topn]['tag'] == tag:
-                taggedNodes.append(topn)
-        nx.draw_networkx_nodes(bnet,pos,ax=ax,nodelist=taggedNodes,node_color=networkColors(i),node_size=nodeSize,label=tag)
+        for j, mclass in enumerate(classes):
+            taggedNodes = []
+            for topn in top:
+                if bnet.nodes(data=True)[topn]['tag'] == tag and bnet.nodes(data=True)[topn]['class'] == mclass:
+                    taggedNodes.append(topn)
+        nx.draw_networkx_nodes(bnet,pos,ax=ax,nodelist=taggedNodes,node_color=networkColors(i),node_shape=nodeShapes[j],
+                               node_size=nodeSize,label=tag)
     
     nx.draw_networkx_edges(bnet,pos,width=edgeWidth)
     #ax.legend()
