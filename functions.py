@@ -23,7 +23,8 @@ def readNodes(cfg):
     Reads information about network nodes and their attributes. To this end, the information
     must be stored in a csv file with named columns. By default, column names are set for reading
     company information ('Alias' (anonymized alias used to refer to the
-    node in the network), 'Name' (real name of the company), and 'FoB' (field of business)).
+    node in the network), 'Name' (real name of the company), 'FoB' (field of business), and 
+    'Membership class' (BM = business member, OM = other member, NM = non-member)).
     Other sets of column names can be given as parameters. Data of the first column will be used
     as node labels and must therefore be anonymized.
     
@@ -31,7 +32,7 @@ def readNodes(cfg):
     -----------
     cfg: dict, contains:
         inputPath: str, path to the input csv file
-        columnNames: list of strs, column names in the csv file (default ['Alias', 'Name', 'FoB'])
+        columnNames: list of strs, column names in the csv file (default ['Alias', 'Name', 'FoB', 'Membership class'])
         
     Returns:
     --------
@@ -43,7 +44,7 @@ def readNodes(cfg):
     if 'columnNames' in cfg.keys():
         columnNames= cfg['columnNames']
     else:
-        columnNames = ['Alias', 'Name', 'FoB']
+        columnNames = ['Alias', 'Name', 'FoB', 'Membership class']
     
     nodeData = pd.read_csv(inputPath)
     nodeInfo = []
@@ -105,23 +106,50 @@ def addNodes(cfg, net, bipartiteClass):
     Parameters:
     -----------
     cfg: dict, contains:
-        inputPath: str, path to the metadata input csv file
-        columnNames: list of strs, column names in the csv file
+        inputPath: str
+            path to the metadata input csv file
+        columnNames: list of strs 
+            column names in the csv file
         net: nx.Graph()
-        bipartite: int (0 or 1), bipartite node class
-        tags: list of strs, the field of business tags
-        
+            the network where to add nodes
+        bipartite: int (0 or 1)
+            bipartite node class (top or bottom)
+        tags: list of strs
+            the field of business tags
+        classes: list of strs
+            the possible membership classes
+        topColors: bln
+            shall the node color attributes be set according to the field of 
+            business indicates in the alias? If False, a separately given 
+            networkBottomColor is used instead.
+        classShapes: bln
+            shall the node shape attributes be set according to the membership class? If false, 'o' is used as the shape
+            of all nodes.
+        networkBottomColor: str
+            the color for bottom (event) nodes
+        nodeShapes: list of strs
+            shapes associated with the different membership classes
+        bottomShape: str
+            the shape of bottom (event) nodes
     Returns:
     --------
         net: nx.Graph()
+            the network with given nodes added
     """
     topColors = cfg['topColors']
+    classShapes = cfg['classShapes']
     networkColors = cfg['networkColors']
+    nodeShapes = cfg['nodeShapes']
     tags = cfg['tags']
+    classes = cfg['classes']
     # Reading node information
     nodeInfo, columnNames = readNodes(cfg)
     aliases = nodeInfo[0] # first column is used as node alias
     attributes = nodeInfo[1::] # additional columns contain attributes
+    if 'FoB' in columnNames:
+        FoBs = attributes[columnNames.index('FoB')-1]
+    if 'Membership class' in columnNames:
+        membershipClasses = attributes[columnNames.index('Membership class')-1]
     
     # Adding nodes and updating their attributes
     for i, node in enumerate(aliases):
@@ -130,14 +158,52 @@ def addNodes(cfg, net, bipartiteClass):
         for columnName, attribute in zip(columnNames[1::], attributes):
             attr_dic[columnName] = attribute[i]
         if topColors:
-            foundTags = []
-            for tag in tags:
-                if tag in node:
-                    foundTags.append(tag)
-            foundLengths = [len(found) for found in foundTags]
-            foundTag = foundTags[foundLengths.index(max(foundLengths))]
-            attr_dic['nodeColor'] = networkColors(tags.index(foundTag))
-            attr_dic['tag'] = foundTag
+            if 'FoB' in columnNames:
+                attr_dic['nodeColor'] = networkColors(tags.index(FoBs[i]))
+                attr_dic['tag'] = FoBs[i]
+            else: # assuming that tag is included in the alias
+                foundTags = []
+                for tag in tags:
+                    if tag in node:
+                        foundTags.append(tag)
+                foundLengths = [len(found) for found in foundTags]
+                foundTag = foundTags[foundLengths.index(max(foundLengths))]
+                attr_dic['nodeColor'] = networkColors(tags.index(foundTag))
+                attr_dic['tag'] = foundTag
+            if classShapes:
+                if 'Membership class' in columnNames:
+                    attr_dic['nodeShape'] = nodeShapes[classes.index(membershipClasses[i])]
+                    attr_dic['class'] = membershipClasses[i]
+                else: # assuming that membership class is included in the alias
+                    foundClasses = []
+                    for mclass in classes:
+                        teststr = mclass + '_'
+                        if teststr in node:
+                            foundClasses.append(mclass)
+                    foundLengths = [len(found) for found in foundClasses]
+                    foundClass = foundClasses[foundLengths.index(max(foundLengths))]
+                    attr_dic['nodeShape'] = nodeShapes[classes.index(foundClass)]
+                    attr_dic['class'] = foundClass
+            else:
+                attr_dic['nodeShape'] = cfg['bottomShape']
+                attr_dic['class'] = 'bottom (event)'
+        elif classShapes and not topColors:
+            if 'Membership class' in columnNames:
+                attr_dic['nodeShape'] = nodeShapes[classes.index(membershipClasses[i])]
+                attr_dic['class'] = membershipClasses[i]
+            else: # assuming that membership class is included in the alias
+                foundClasses = []
+                for mclass in classes:
+                    teststr = mclass + '_'
+                    if teststr in node:
+                        foundClasses.append(mclass)
+                foundLengths = [len(found) for found in foundClasses]
+                foundClass = foundClasses[foundLengths.index(max(foundLengths))]
+                attr_dic['nodeShape'] = nodeShapes[classes.index(foundClass)]
+                attr_dic['class'] = foundClass
+                
+            attr_dic['nodeColor'] = cfg['networkBottomColor']
+            attr_dic['tag'] = 'bottom (event)'
         else:
             attr_dic['nodeColor'] = cfg['networkBottomColor']
             attr_dic['tag'] = 'bottom (event)'
@@ -153,16 +219,37 @@ def createBipartite(cfg):
     Parameters:
     -----------
     cfg: dict, contains:
-        companyInputPath: str, path to the company metadata input csv file
-        eventInputPath: str, path to the event metadata input csv file
-        linkInputPath: str, path to the link input csv file
-        companyColumnNames: list of strs, column names in the csv file containing the company information (default ['Alias', 'Name', 'FoB'])
-        eventColumnNames: list of strs, column names in the csv file containing the company information (default ['Alias', 'Name'])
-        linkColumnNames: list of strs, column names in the link csv file (default ['Source', 'Target'])
-        topColors: bln, shall the node color attributes be set according to the field of business indicates in the alias? If False, a separately set networkBottomColor is used instead.
-        networkColors: matplotlib.cmap, colors associated with different fields of business
-        tags: list of strs, the field of business tags
-        networkBottomColor: str, the color for bottom (event) nodes
+        companyInputPath: str
+            path to the company metadata input csv file
+        eventInputPath: str
+            path to the event metadata input csv file
+        linkInputPath: str
+            path to the link input csv file
+        companyColumnNames: list of strs
+            column names in the csv file containing the company information (default ['Alias', 'Name', 'FoB'])
+        eventColumnNames: list of strs
+            column names in the csv file containing the company information (default ['Alias', 'Name'])
+        linkColumnNames: list of strs
+            column names in the link csv file (default ['Source', 'Target'])
+        topColors: bln
+            shall the node color attributes be set according to the field of business indicated in the alias? If False, 
+            a separately given networkBottomColor is used instead.
+        classShapes: bln
+            shall the node shape attributes be set according to the membership class? If false, a separately given
+            bottomShape is used as the shape
+            of all nodes.
+        networkColors: matplotlib.cmap
+            colors associated with different fields of business
+        nodeShapes: list of strs
+            shapes associated with the different membership classes
+        tags: list of strs
+            the possible field of business tags
+        classes: list of strs
+            the possible membership classes
+        networkBottomColor: str
+            the color for bottom (event) nodes
+        bottomShape: str
+            the shape of bottom (event) nodes
         
     Returns:
     --------
@@ -173,15 +260,17 @@ def createBipartite(cfg):
     # Reading company information, adding company nodes
     cfg['inputPath'] = cfg['companyInputPath']
     cfg['topColors'] = True
+    cfg['classShapes'] = True
     if 'companyColumnNames' in cfg.keys():
         cfg['columnNames'] = cfg['companyColumnNames']
     else:
-        cfg['columnNames'] = ['Alias', 'Name', 'FoB']
+        cfg['columnNames'] = ['Alias', 'Name', 'FoB', 'Membership class']
     bnet = addNodes(cfg, bnet, bipartiteClass=0)   
     
     # Reading event information, adding event nodes
     cfg['inputPath'] = cfg['eventInputPath']
     cfg['topColors'] = False
+    cfg['classShapes'] = False
     if 'eventColumnNames' in cfg.keys():
         cfg['columnNames'] = cfg['eventColumnNames']
     else:
@@ -615,7 +704,6 @@ def createCliqueIndexHeatmap(cliqueInfo, cfg):
     
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    print xEdges[0],xEdges[-1],yEdges[0],yEdges[-1]
     im = ax.imshow(count,interpolation='none',cmap=cfg['cliqueHeatmapCmap'],aspect='auto',origin='lower')
     ax.autoscale(False)
     ax.set_xlabel('Bottom index (number of events)')

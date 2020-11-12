@@ -115,7 +115,6 @@ lowDegreePercentile = 25
 highDegreePercentile = 75
 
 # comparison against random
-
 nRandomIterations = 1000
 nRandomBins = 20
 
@@ -126,12 +125,19 @@ topColor = colors(0)
 bottomColor = colors(1)
 
 tags = ['C','CB','Con','CS','E','ENGO','F','H','HKI','II','In','L','Me','N','R','S','SD','Se','T','V' ]
+membershipClasses = ['BM','OM','NM']
+# TODO: fix
 
 #networkCMap = 'tab20'
 networkCMap = categorical_cmap(8,3,cmap='Set1')
 networkColors = cm.get_cmap('Set1', lut=len(tags))
 networkBottomColor = 'k'
 nodeSize = 50
+businessMemberNodeShape = 'o'
+otherMemberNodeShape = 's'
+nonMemberNodeShape = 'd'
+nodeShapes = [businessMemberNodeShape, otherMemberNodeShape, nonMemberNodeShape]
+bottomShape = 'o'
 edgeWidth = 0.5
 
 cliqueTopColor = 'r'

@@ -25,7 +25,7 @@ meanRichnesses = []
 meanDiversities = []
 meanRelativeDiversities = []
 
-numbersOnly = False
+numbersOnly = True
 
 if numbersOnly:
     cfg = {}
@@ -37,10 +37,13 @@ if numbersOnly:
     cfg['eventColumnNames'] = pms.eventColumnNames
     cfg['linkColumnNames'] = pms.linkColumnNames
     cfg['tags'] = pms.tags
+    cfg['classes'] = pms.membershipClasses
     
     cfg['topColor'] = pms.topColor
     cfg['networkColors'] = pms.networkColors
     cfg['networkBottomColor'] = pms.networkBottomColor
+    cfg['nodeShapes'] = pms.nodeShapes
+    cfg['bottomShape'] = pms.bottomShape
 
     for year, linkInputPath in zip(years,linkInputPaths):
         
@@ -89,6 +92,7 @@ else:
         cfg['eventColumnNames'] = pms.eventColumnNames
         cfg['linkColumnNames'] = pms.linkColumnNames
         cfg['tags'] = pms.tags
+        cfg['classes'] = pms.membershipClasses
         
         cfg['nDegreeBins'] = pms.nDegreeBins
         cfg['cliqueHeatmapTopBins'] = pms.cliqueHeatmapTopBins
@@ -103,6 +107,8 @@ else:
         cfg['networkColors'] = pms.networkColors
         cfg['networkBottomColor'] = pms.networkBottomColor
         cfg['nodeSize'] = pms.nodeSize
+        cfg['nodeShapes'] = pms.nodeShapes
+        cfg['bottomShape'] = pms.bottomShape
         cfg['edgeWidth'] = pms.edgeWidth
         cfg['cliqueTopColor'] = pms.cliqueTopColor
         cfg['nonCliqueColor'] = pms.nonCliqueColor
