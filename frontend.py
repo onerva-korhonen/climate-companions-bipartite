@@ -95,7 +95,8 @@ else:
         cfg['classes'] = pms.membershipClasses
         cfg['nonMemberClass'] = pms.nonMemberClass
         
-        cfg['nDegreeBins'] = pms.nDegreeBins
+        cfg['nTopDegreeBins'] = pms.nTopDegreeBins
+        cfg['nBottomDegreeBins'] = pms.nBottomDegreeBins
         cfg['cliqueHeatmapTopBins'] = pms.cliqueHeatmapTopBins
         cfg['cliqueHeatmapBottomBins'] = pms.cliqueHeatmapBottomBins
         cfg['nRichnessBins'] = pms.nRichnessBins

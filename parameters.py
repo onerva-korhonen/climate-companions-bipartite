@@ -106,7 +106,8 @@ eventColumnNames = ['Alias:', 'Event:']
 linkColumnNames = ['Event:', 'Participant:']
 
 # distributions and binning
-nDegreeBins = 20
+nTopDegreeBins = 20
+nBottomDegreeBins = 20
 cliqueHeatmapBottomBins = np.arange(0.5,16.5,1)
 cliqueHeatmapTopBins = np.arange(0.5,68.5,1)
 nRichnessBins = 5

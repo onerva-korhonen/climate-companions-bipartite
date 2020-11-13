@@ -330,8 +330,8 @@ def getDegreeDistributions(bnet, cfg):
     cfg: dict, contains:
         savePathBase: str, a base path (e.g. to a shared folder) for saving figures
         degreeSaveName: str, name of the file where to save the degree distribution plots
-        nDegreeBins: int, number of bins used to calculate the distributions
-        TODO: add a possibility for different number of bins in top and bottom
+        nTopDegreeBins: int, number of bins used to calculate the top degree distribution
+        nBottomDegreeBins: int, number of bins used to calculate the bottom degree distribution
         topColor: str, color for plotting the top degree distribution
         bottomColor: str, color for plotting the bottom degree distribution
         
@@ -346,7 +346,8 @@ def getDegreeDistributions(bnet, cfg):
     
     Further, saves the degree distributions in a file
     """
-    nBins = cfg['nDegreeBins']
+    nTopBins = cfg['nTopDegreeBins']
+    nBottomBins = cfg['nBottomDegreeBins']
     topColor = cfg['topColor']
     bottomColor = cfg['bottomColor']  
     savePath = cfg['savePathBase'] + cfg['degreeSaveName']
@@ -358,8 +359,8 @@ def getDegreeDistributions(bnet, cfg):
     bottomDegrees = dict(bottomDegrees)
     topDegree = topDegrees.values() 
     bottomDegree = bottomDegrees.values()
-    topPdf, topBinCenters = getDistribution(topDegree, nBins)
-    bottomPdf, bottomBinCenters = getDistribution(bottomDegree, nBins)
+    topPdf, topBinCenters = getDistribution(topDegree, nTopBins)
+    bottomPdf, bottomBinCenters = getDistribution(bottomDegree, nBottomBins)
     
     fig = plt.figure()
     ax = fig.add_subplot(121)
