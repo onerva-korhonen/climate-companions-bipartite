@@ -101,11 +101,14 @@ else:
         cfg['cliqueHeatmapBottomBins'] = pms.cliqueHeatmapBottomBins
         cfg['nRichnessBins'] = pms.nRichnessBins
         
+        cfg['separateClasses'] = pms.separateClasses
+        
         cfg['nRandomIterations'] = pms.nRandomIterations
         cfg['nRandomBins'] = pms.nRandomBins
         
         cfg['topColor'] = pms.topColor
         cfg['bottomColor'] = pms.bottomColor
+        cfg['classColors'] = pms.classColors
         cfg['networkColors'] = pms.networkColors
         cfg['networkBottomColor'] = pms.networkBottomColor
         cfg['nodeSize'] = pms.nodeSize

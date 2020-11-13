@@ -115,20 +115,22 @@ nRichnessBins = 5
 lowDegreePercentile = 25
 highDegreePercentile = 75
 
+separateClasses = True # should top degree distribution be drawn separately for different membership classes?
+
 # comparison against random
 nRandomIterations = 1000
 nRandomBins = 20
 
 # visualization
-cmap = 'cool'
-colors = cm.get_cmap(cmap, lut=2)
-topColor = colors(0)
-bottomColor = colors(1)
-
 tags = ['C','CB','Con','CS','E','ENGO','F','H','HKI','II','In','L','Me','N','R','S','SD','Se','T','V' ]
 membershipClasses = ['BM','OM','NM']
 nonMemberClass = 'NM'
-# TODO: fix
+
+cmap = 'cool'
+colors = cm.get_cmap(cmap, lut=len(membershipClasses)+1)
+topColor = colors(0)
+classColors = colors[1:-1]
+bottomColor = colors(-1)
 
 #networkCMap = 'tab20'
 networkCMap = categorical_cmap(8,3,cmap='Set1')

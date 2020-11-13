@@ -334,6 +334,11 @@ def getDegreeDistributions(bnet, cfg):
         nBottomDegreeBins: int, number of bins used to calculate the bottom degree distribution
         topColor: str, color for plotting the top degree distribution
         bottomColor: str, color for plotting the bottom degree distribution
+        separateClasses: bln, if True, the top degree distribution is plotted separately for
+                         for each membership class (node attribute 'class') in addition to
+                         the distribution of all top nodes
+        classColors: list of strs, colors for plotting the degree distributions of different
+                     top node classes if separateClasses == True
         
     Returns:
     --------
@@ -351,23 +356,49 @@ def getDegreeDistributions(bnet, cfg):
     topColor = cfg['topColor']
     bottomColor = cfg['bottomColor']  
     savePath = cfg['savePathBase'] + cfg['degreeSaveName']
+    separateClasses = cfg['separateClasses']
     
     top, bottom = getTopAndBottom(bnet)
     topDegrees = nx.degree(bnet,top)
-    topDegrees = dict(topDegrees) # bipartite.degrees returns a DegreeView so this is required for accessing values
-    bottomDegrees = nx.degree(bnet, bottom)
-    bottomDegrees = dict(bottomDegrees)
-    topDegree = topDegrees.values() 
-    bottomDegree = bottomDegrees.values()
-    topPdf, topBinCenters = getDistribution(topDegree, nTopBins)
-    bottomPdf, bottomBinCenters = getDistribution(bottomDegree, nBottomBins)
     
     fig = plt.figure()
     ax = fig.add_subplot(121)
-    ax.plot(topBinCenters, topPdf, color=topColor, label='Companies (top nodes)')
+    
+    if separateClasses:
+        classColors = cfg['classColors']
+        topDegreesAll = dict(topDegrees)
+        topPdfAll, topBinCentersAll = getDistribution(topDegreesAll, nTopBins)
+
+        ax.plot(topBinCentersAll, topPdfAll, color=topColor, label='All companies (top nodes)')
+        
+        classes = cfg['classes']
+        nodes = bnet.nodes(data=True)
+        
+        for mclass, classColor in zip(classes, classColors):
+            classDegrees = []
+            for node in nodes:
+                if nodes[node]['class'] == mclass:
+                    classDegrees.append(topDegrees[node])
+            classPdf, classBinCenters = getDistribution(classDegrees, nTopBins)
+            
+            ax.plot(classBinCenters, classPdf, color=classColor, label='Companies (top nodes), class ' + mclass)
+    
+    else:        
+        topDegrees = dict(topDegrees) # bipartite.degrees returns a DegreeView so this is required for accessing values
+        topDegree = topDegrees.values() 
+        topPdf, topBinCenters = getDistribution(topDegree, nTopBins)
+        
+        ax.plot(topPdf, topBinCenters, color=topColor, label='Companies (top nodes)')
+        
     ax.set_xlabel('Degree')
     ax.set_ylabel('PDF')
     ax.set_title('Companies (top nodes)')
+    
+    bottomDegrees = nx.degree(bnet, bottom)
+    bottomDegrees = dict(bottomDegrees)
+    bottomDegree = bottomDegrees.values()
+    bottomPdf, bottomBinCenters = getDistribution(bottomDegree, nBottomBins)
+    
     #ax.legend()
     ax = fig.add_subplot(122)
     ax.plot(bottomBinCenters, bottomPdf, color=bottomColor, label='Events (bottom nodes)')
