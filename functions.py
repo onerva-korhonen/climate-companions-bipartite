@@ -13,7 +13,7 @@ import numpy as np
 import matplotlib.pylab as plt
 import random
 from networkx.algorithms import bipartite
-from scipy.stats import binned_statistic, binned_statistic_2d
+from scipy.stats import binned_statistic, binned_statistic_2d, ttest_1samp
 from itertools import combinations
 
 # Functions for reading metadata
@@ -987,6 +987,7 @@ def compareAgainstRandom(bnet,cfg,measures):
             cliques, cliqueInfo = findBicliques(randNet)
             cliques, cliqueInfo = pruneStars(randNet,cliques,cliqueInfo)
             randStarness.append(getStarness(bnet,cliqueInfo))
+        t,p = ttest_1samp(randStarness,starness)
         randLabel = 'Starness of random networks, mean: ' + str(np.mean(randStarness))
         dataLabel = 'True starness: ' + str(starness)
         fig = plt.figure()
@@ -994,6 +995,7 @@ def compareAgainstRandom(bnet,cfg,measures):
         pdf, binCenters = getDistribution(randStarness,nRandBins)
         plt.plot(binCenters,pdf,color=randColor,alpha=randAlpha,label=randLabel)
         plt.plot([starness,starness],[0,max(pdf)],color=dataColor,label=dataLabel)
+        ax.set_title('t: ' + str(t) + ', p: ' + str(p))
         ax.set_xlabel('Starness')
         ax.set_ylabel('PDF')
         ax.legend()
@@ -1050,10 +1052,12 @@ def compareAgainstRandom(bnet,cfg,measures):
         fig = plt.figure()
         ax = fig.add_subplot(111)
         randMeanDist, randMeanCenters = getDistribution(meanRichnesses,nRandBins)
+        t, p = ttest_1samp(meanRichnesses, np.mean(richness))
         randLabel = 'mean richness in random networks, mean of means: ' + str(np.mean(meanRichnesses))
         dataLabel = 'mean richess in data: ' + str(np.mean(richness))
         plt.plot(randMeanCenters,randMeanDist,color=randColor,alpha=randAlpha,label=randLabel)
         plt.plot([np.mean(richness),np.mean(richness)],[0,max(randDist)],color=dataColor,label=dataLabel)
+        ax.set_title('t: ' + str(t) + ', p: ' + str(p))
         ax.set_xlabel('Mean richness')
         ax.set_ylabel('PDF')
         ax.legend()
@@ -1080,10 +1084,12 @@ def compareAgainstRandom(bnet,cfg,measures):
             randDist,randCenters = getDistribution(randMeanDiversities,nRandBins)
             trueMean = np.mean(diversity)
             randomMean = np.mean(randMeanDiversities)
+            t,p = ttest_1samp(randMeanDiversities,trueMean)
             randLabel = 'mean effective diversity in random networks, pooled: ' + str(randomMean)
             dataLabel = 'mean effective diversity in data: ' + str(trueMean)
             plt.plot(randCenters,randDist,color=randColor,alpha=randAlpha,label=randLabel)
             plt.plot([trueMean,trueMean],[0,max(randDist)],color=dataColor,label=dataLabel)
+            ax.set_title('t: ' + str(t) + ', p: ' + str(p))
             ax.set_xlabel('Mean effective diversity')
             ax.set_ylabel('PDF')
             ax.legend()
@@ -1097,10 +1103,12 @@ def compareAgainstRandom(bnet,cfg,measures):
             relativeDiversity = np.array(diversity)/np.array(richness)
             trueMean = np.mean(relativeDiversity)
             randomMean = np.mean(randRelativeDiversities)
+            t,p = ttest_1samp(randRelativeDiversities,trueMean)
             randLabel = 'mean relative diversity in random networks, pooled: ' + str(randomMean)
             dataLabel = 'mean relative diversity in data: ' + str(trueMean)
             plt.plot(randCenters,randDist,color=randColor,alpha=randAlpha,label=randLabel)
             plt.plot([trueMean,trueMean],[0,max(randDist)],color=dataColor,label=dataLabel)
+            ax.set_title('t: ' + str(t) + ', p: ' + str(p))
             ax.set_xlabel('Mean relative diversity')
             ax.set_ylabel('PDF')
             ax.legend()
