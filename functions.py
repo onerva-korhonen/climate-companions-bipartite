@@ -46,7 +46,7 @@ def readNodes(cfg):
     else:
         columnNames = ['Alias', 'Name', 'FoB', 'Membership class']
     
-    nodeData = pd.read_csv(inputPath)
+    nodeData = pd.read_csv(inputPath,sep=';')
     nodeInfo = []
     
     #import pdb; pdb.set_trace()
@@ -81,7 +81,7 @@ def readLinks(cfg):
     else:
         columnNames = ['Source', 'Target']
     
-    linkData = pd.read_csv(inputPath)
+    linkData = pd.read_csv(inputPath, sep=';')
     links = []
     
     sources = linkData[columnNames[0]]
@@ -359,34 +359,32 @@ def getDegreeDistributions(bnet, cfg):
     separateClasses = cfg['separateClasses']
     
     top, bottom = getTopAndBottom(bnet)
-    topDegrees = nx.degree(bnet,top)
+    topDegrees = dict(nx.degree(bnet,top)) # degrees returns a DegreeView so this is required for accessing values
     
     fig = plt.figure()
     ax = fig.add_subplot(121)
     
     if separateClasses:
         classColors = cfg['classColors']
-        topDegreesAll = dict(topDegrees)
+        topDegreesAll = topDegrees.values()
         topPdfAll, topBinCentersAll = getDistribution(topDegreesAll, nTopBins)
 
         ax.plot(topBinCentersAll, topPdfAll, color=topColor, label='All companies (top nodes)')
         
         classes = cfg['classes']
-        nodes = bnet.nodes(data=True)
+        nodes = dict(bnet.nodes(data=True))
         
         for mclass, classColor in zip(classes, classColors):
             classDegrees = []
-            for node in nodes:
-                if nodes[node]['class'] == mclass:
-                    classDegrees.append(topDegrees[node])
+            for topNode in top:
+                if nodes[topNode]['class'] == mclass:
+                    classDegrees.append(topDegrees[topNode])
             classPdf, classBinCenters = getDistribution(classDegrees, nTopBins)
             
             ax.plot(classBinCenters, classPdf, color=classColor, label='Companies (top nodes), class ' + mclass)
     
     else:        
-        topDegrees = dict(topDegrees) # bipartite.degrees returns a DegreeView so this is required for accessing values
-        topDegree = topDegrees.values() 
-        topPdf, topBinCenters = getDistribution(topDegree, nTopBins)
+        topPdf, topBinCenters = getDistribution(topDegrees.values, nTopBins)
         
         ax.plot(topPdf, topBinCenters, color=topColor, label='Companies (top nodes)')
         
@@ -410,7 +408,7 @@ def getDegreeDistributions(bnet, cfg):
     plt.tight_layout()
     plt.savefig(savePath,format='pdf',bbox_inches='tight')
     
-    return topDegrees, topPdf, topBinCenters, bottomDegrees, bottomPdf, bottomBinCenters
+    return topDegrees, topPdfAll, topBinCentersAll, bottomDegrees, bottomPdf, bottomBinCenters
 
 def getDensity(bnet):
     """
@@ -635,12 +633,13 @@ def getCliqueIndices(bnet, cliques):
     
     return cliqueInfo
     
-def pruneStars(bnet, cliques, cliqueInfo, nonMemberClass='NM'):
+def pruneStars(bnet, cliques, cliqueInfo, ignoreNonMembers, nonMemberClass='NM'):
     """
     Removes from bistars all top nodes (companies) that participate in any other
-    cliques besides the bistar, as well as all top nodes whose membership class
-    matches the non-member class. Bistar is a clique where one bottom node (event)
-    is surrounded by multiple top nodes (companies). If all top nodes of the bistar
+    cliques besides the bistar. Bistar is a clique where one bottom node (event)
+    is surrounded by multiple top nodes (companies). There is also an option
+    to remove all top nodes whose membership class
+    matches the non-member class.If all top nodes of the bistar
     are removed, the whole star is removed.
     
     Parameters:
@@ -657,6 +656,8 @@ def pruneStars(bnet, cliques, cliqueInfo, nonMemberClass='NM'):
                                     'bottomIndex': number of bottom nodes of the clique,
                                     'isBridge': does the clique consist of one top node (company) connecting multiple bottom nodes,
                                     'isStar': does the clique consist of node bottom node (event) connecting multiple top nodes)
+    ignoreNonMembers: bl
+        should the non-member nodes be removed from cliques?
     nonMemberClass: str
         the membership class (class attribute) of those nodes that should be
         removed from stars. Non-member companies or instances often
@@ -668,6 +669,7 @@ def pruneStars(bnet, cliques, cliqueInfo, nonMemberClass='NM'):
              with the pruned versions
     cliqueInfo: list of dicts, updated info for the updated clique list
     """
+    #import pdb; pdb.set_trace()
     cliquesToRemove = []
     infosToRemove = []
     bottomOnlyCliques = []
@@ -678,9 +680,9 @@ def pruneStars(bnet, cliques, cliqueInfo, nonMemberClass='NM'):
         if info['isStar'] == True:
             topToRemove = []
             for top in info['topNodes']:
-                if nx.degree(bnet,top) > 1:
+                if ignoreNonMembers and bnet.nodes(data=True)[top]['class'] == nonMemberClass: # random networks don't have the class tag
                     topToRemove.append(top)
-                if bnet.nodes(data=True)[top]['class'] == nonMemberClass:
+                elif nx.degree(bnet,top) > 1:
                     topToRemove.append(top)
             if len(topToRemove) == len(info['topNodes']): # if all the top nodes of a clique are to be removed, let's remove the whole clique
                 bottomOnlyCliques.append(clique)
@@ -878,7 +880,7 @@ def getCliqueFieldDiversityWrapper(bnet,cliqueInfo):
     
 # Null models
     
-def createRandomBipartite(bnet):
+def createRandomBipartite(bnet, ignoreNonMembers=False, nonMemberClass=''):
     """
     Creates a randomly wired bipartite network with the same number of top and
     bottom nodes and the same density as a given network.
@@ -886,15 +888,31 @@ def createRandomBipartite(bnet):
     Parameters:
     -----------
     bnet: networkx.Graph(), a bipartite
+    ignoreNonMembers: bln, is the random bipartite created for an analysis where
+                      non-member nodes will be ignored (if so, the number of non-member
+                      nodes in the original network is taken into account when defining
+                      the number of top nodes and density of the random network)
+    nonMemberClass: str, the class attribute of non-member nodes in bnet
     
     Returns:
     --------
     randNet: networkx.Graph(), a randomly wired bipartite
     """
+    import pdb; pdb.set_trace()
     top, bottom = getTopAndBottom(bnet) 
-    nTop = len(top)
+    if ignoreNonMembers:
+        nonMembers = getNonMembers(bnet,nonMemberClass)
+        nTop = len(top) - len(nonMembers)
+        nEdges = 0
+        for edge in bnet.edges():
+            if edge[0] in nonMembers or edge[1] in nonMembers:
+                continue
+            else:
+                nEdges += 1
+    else:
+        nTop = len(top)
+        nEdges = len(bnet.edges())
     nBottom = len(bottom)
-    nEdges = len(bnet.edges())
     randNet = nx.bipartite.gnmk_random_graph(nTop,nBottom,nEdges)
     return randNet
 
@@ -947,6 +965,8 @@ def compareAgainstRandom(bnet,cfg,measures):
                nRandomIterations: int, number of null model instances to be used
                nRandomBins: int, number of bins for obtaining the random distribution
                nRichnessBins: int, number of bins for obtaining distributions of richness
+               ignoreNonMembers: bln, should non-member nodes be ignered in starness analysis?
+               nonMemberClass: str, class tag of the non-member nodes
                randomColor: str, color for visualizing the values obtained from random networks
                dataColor: str, color for visualizing the actual values
                randomMarker: str, marker for the values obtained from random networks
@@ -968,6 +988,11 @@ def compareAgainstRandom(bnet,cfg,measures):
     
     """
     nIters = cfg['nRandomIterations']
+    ignoreNonMembers = cfg['ignoreNonMembers']
+    if ignoreNonMembers:
+        nonMemberClass = cfg['nonMemberClass']
+    else:
+        nonMemberClass = ''
     randColor = cfg['randomColor']
     dataColor = cfg['dataColor']
     randMarker = cfg['randomMarker']
@@ -982,10 +1007,10 @@ def compareAgainstRandom(bnet,cfg,measures):
         starness = measures['starness']
         randStarness = []
         for i in range(nIters):
-            randNet = createRandomBipartite(bnet)
+            randNet = createRandomBipartite(bnet,ignoreNonMembers,nonMemberClass)
             randNet,_ = pruneBipartite(randNet)
             cliques, cliqueInfo = findBicliques(randNet)
-            cliques, cliqueInfo = pruneStars(randNet,cliques,cliqueInfo)
+            cliques, cliqueInfo = pruneStars(randNet,cliques,cliqueInfo,ignoreNonMembers,nonMemberClass)
             randStarness.append(getStarness(bnet,cliqueInfo))
         t,p = ttest_1samp(randStarness,starness)
         randLabel = 'Starness of random networks, mean: ' + str(np.mean(randStarness))
@@ -1208,6 +1233,7 @@ def drawNetwork(bnet, cfg):
     --------
     no direct output, saves the network visualization as pdf
     """
+    #import pdb; pdb.set_trace()
     
     tags = cfg['tags']    
     classes = cfg['classes']
@@ -1234,7 +1260,7 @@ def drawNetwork(bnet, cfg):
             for topn in top:
                 if bnet.nodes(data=True)[topn]['tag'] == tag and bnet.nodes(data=True)[topn]['class'] == mclass:
                     taggedNodes.append(topn)
-        nx.draw_networkx_nodes(bnet,pos,ax=ax,nodelist=taggedNodes,node_color=networkColors(i),node_shape=nodeShapes[j],
+            nx.draw_networkx_nodes(bnet,pos,ax=ax,nodelist=taggedNodes,node_color=networkColors(i),node_shape=nodeShapes[j],
                                node_size=nodeSize,label=tag)
     
     nx.draw_networkx_edges(bnet,pos,width=edgeWidth)
@@ -1511,6 +1537,30 @@ def getJaccardIndex(a,b):
     b = set(b)
     J = len(a.intersection(b))/float(len(a.union(b)))
     return J
+
+def getNonMembers(bnet, nonMemberClass):
+    """
+    Gives a list of the non-member top nodes in the network.
+    
+    Parameters:
+    -----------
+    bnet: nx.bipartite
+        a bipartite network
+    nonMemberClass: str
+        the value of the 'class' tag indicating the non-member nodes
+        
+    Returns:
+    --------
+    nonMembers: list
+        the non-member nodes
+    """
+    topNodes, _ = getTopAndBottom(bnet)
+    nonMembers = []
+    for top in topNodes:
+        if bnet.nodes(data=True)[top]['class'] == nonMemberClass:
+            nonMembers.append(top)
+    return nonMembers
+    
     
 
 

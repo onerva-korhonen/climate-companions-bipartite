@@ -25,7 +25,7 @@ meanRichnesses = []
 meanDiversities = []
 meanRelativeDiversities = []
 
-numbersOnly = True
+numbersOnly = False
 
 if numbersOnly:
     cfg = {}
@@ -38,6 +38,9 @@ if numbersOnly:
     cfg['linkColumnNames'] = pms.linkColumnNames
     cfg['tags'] = pms.tags
     cfg['classes'] = pms.membershipClasses
+    
+    cfg['ignoreNonMembers'] = pms.ignoreNonMembers
+    cfg['nonMemberClass'] = pms.nonMemberClass
     
     cfg['topColor'] = pms.topColor
     cfg['networkColors'] = pms.networkColors
@@ -93,6 +96,7 @@ else:
         cfg['linkColumnNames'] = pms.linkColumnNames
         cfg['tags'] = pms.tags
         cfg['classes'] = pms.membershipClasses
+        cfg['ignoreNonMembers'] = pms.ignoreNonMembers
         cfg['nonMemberClass'] = pms.nonMemberClass
         
         cfg['nTopDegreeBins'] = pms.nTopDegreeBins

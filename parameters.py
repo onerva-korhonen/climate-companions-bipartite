@@ -36,7 +36,7 @@ def categorical_cmap(nc, nsc, cmap, continuous=False):
     cmap = matplotlib.colors.ListedColormap(cols)
     return cmap
 
-def getLinkInputPaths(years, linkInputStem, manualLinkInputPaths=[]):
+def getLinkInputPaths(years, linkInputStem, extension='.csv', manualLinkInputPaths=[]):
     """
     A function for generating a list of link input pahts. They're tried
     to generate from a file name stem and year, but if the file corresponding
@@ -50,6 +50,8 @@ def getLinkInputPaths(years, linkInputStem, manualLinkInputPaths=[]):
     linkInputStem: str
         a file name stem that, combined with the year and extension, should
         give the actual file names
+    extension: str
+        the file extension
     manualLinkInputPaths: list of strs
         elements of manualLinkInputPaths should be file names. If a file 
         is not found at the generated path, the corresponding element
@@ -66,11 +68,11 @@ def getLinkInputPaths(years, linkInputStem, manualLinkInputPaths=[]):
     linkInputPaths = []
     if len(manualLinkInputPaths) == 0:
         for year in years:
-            linkInputPath = linkInputStem + year + '.csv'
+            linkInputPath = linkInputStem + year + extension
             linkInputPaths.append(linkInputPath)
     else:
         for i, year in enumerate(years):
-            linkInputPath = linkInputStem + year + '.csv'
+            linkInputPath = linkInputStem + year + extension
             if os.path.isfile(linkInputPath):
                 linkInputPaths.append(linkInputPath)
             else:
@@ -78,10 +80,11 @@ def getLinkInputPaths(years, linkInputStem, manualLinkInputPaths=[]):
     return linkInputPaths
 
 # input
-companyInputPath = '/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Members_alias_271018.csv'
-eventInputPath = '/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Events_alias_271018.csv'
-manualLinkInputPaths = ['/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_all_271018.csv',
-                  '/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2011.csv']
+companyInputPath = '/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin_uusi/Member_alias.csv'
+eventInputPath = '/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin_uusi/Events_alias_uusi.csv'
+manualLinkInputPaths = []
+                  #['/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_all_271018.csv',
+                  #'/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2011.csv']
                  #['/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2011.csv',
                   #'/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2012.csv',
                   #'/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2013.csv',
@@ -95,11 +98,12 @@ manualLinkInputPaths = ['/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc
                   #'/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2015_2016.csv',
                   #'/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2017_2018.csv',
                   #'/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_all_271018.csv']
-years = ['all','2011']#['11-12','13-14','15-16','17-18','all']
-linkInputStem = '/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_'
-linkInputPaths = getLinkInputPaths(years, linkInputStem, manualLinkInputPaths)
+years = ['2015_2016']#['11-12','13-14','15-16','17-18','all']
+linkInputStem = '/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin_uusi/Links_'
+linkInputExtension = '_uusi.csv'
+linkInputPaths = getLinkInputPaths(years, linkInputStem, linkInputExtension, manualLinkInputPaths)
 
-staticNetworkInputPath = '/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_all_271018.csv'
+staticNetworkInputPath = '/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin_uusi/Links_all_uusi.csv'
                   
 companyColumnNames = ['Alias:', 'Member:']
 eventColumnNames = ['Alias:', 'Event:']
@@ -120,16 +124,17 @@ separateClasses = True # should top degree distribution be drawn separately for 
 # comparison against random
 nRandomIterations = 1000
 nRandomBins = 20
+ignoreNonMembers = True
 
 # visualization
-tags = ['C','CB','Con','CS','E','ENGO','F','H','HKI','II','In','L','Me','N','R','S','SD','Se','T','V' ]
-membershipClasses = ['BM','OM','NM']
+tags = ['C','CM','Co','E','I','II','LT','S','SD','RE','NGO','PS','AG','FPS','OC','HKI_1','HKI_2']
+membershipClasses = ['BM','OM','NM','HKI']
 nonMemberClass = 'NM'
 
 cmap = 'cool'
-colors = cm.get_cmap(cmap, lut=len(membershipClasses)+1)
+colors = cm.get_cmap(cmap, lut=len(membershipClasses)+2)
 topColor = colors(0)
-classColors = colors[1:-1]
+classColors = [colors(i) for i in range(1,len(membershipClasses)+1)]
 bottomColor = colors(-1)
 
 #networkCMap = 'tab20'
@@ -140,7 +145,8 @@ nodeSize = 50
 businessMemberNodeShape = 'o'
 otherMemberNodeShape = 's'
 nonMemberNodeShape = 'd'
-nodeShapes = [businessMemberNodeShape, otherMemberNodeShape, nonMemberNodeShape]
+HKINodeShape = '^'
+nodeShapes = [businessMemberNodeShape, otherMemberNodeShape, nonMemberNodeShape, HKINodeShape]
 bottomShape = 'o'
 edgeWidth = 0.5
 
@@ -168,7 +174,7 @@ randomAlpha = 0.2
 
 
 # save paths
-savePathBase = '/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/'
+savePathBase = '/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/tulokset_jan_2021/'
 degreeSaveName = 'degree-distributions'
 degreeNodeDictionarySaveName = 'companies-per-degree'
 networkSaveName = 'network'
