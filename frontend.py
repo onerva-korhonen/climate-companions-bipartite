@@ -38,6 +38,7 @@ if numbersOnly:
     cfg['linkColumnNames'] = pms.linkColumnNames
     cfg['tags'] = pms.tags
     cfg['classes'] = pms.membershipClasses
+    cfg['csvSeparator'] = pms.csvSeparator
     
     cfg['ignoreNonMembers'] = pms.ignoreNonMembers
     cfg['nonMemberClass'] = pms.nonMemberClass
@@ -54,6 +55,7 @@ if numbersOnly:
         
         cfg['savePathBase'] = pms.savePathBase
         cfg['degreeSaveName'] = pms.degreeSaveName + '_' + year + '.pdf'
+        cfg['degreeHistogramSaveName'] = pms.degreeHistogramSaveName + '_' + year + '.pdf'
         cfg['degreeNodeDictionarySaveName'] = pms.degreeNodeDictionarySaveName + '_' + year + '.csv'
         cfg['networkSaveName'] = pms.networkSaveName + '_' + year + '.pdf'
         cfg['cliquesSaveName'] = pms.cliqueSaveName + '_' + year
@@ -63,6 +65,7 @@ if numbersOnly:
         cfg['relativeDiversitySaveName'] = pms.relativeDiversitySaveName + '_' + year
         cfg['diversityVsBottomIndexSaveName'] = pms.diversityVsBottomIndexSaveName + '_' + year + '.pdf'
         cfg['diversityVsTopIndexSaveName'] = pms.diversityVsTopIndexSaveName + '_' + year + '.pdf'
+        cfg['fieldHistogramSaveName'] = pms.fieldHistogramSaveName + '_' + year + '.pdf'
     
         bnet = functions.createBipartite(cfg)
         #import pdb; pdb.set_trace()
@@ -96,6 +99,8 @@ else:
         cfg['linkColumnNames'] = pms.linkColumnNames
         cfg['tags'] = pms.tags
         cfg['classes'] = pms.membershipClasses
+        cfg['csvSeparator'] = pms.csvSeparator
+        
         cfg['ignoreNonMembers'] = pms.ignoreNonMembers
         cfg['nonMemberClass'] = pms.nonMemberClass
         
@@ -106,6 +111,7 @@ else:
         cfg['nRichnessBins'] = pms.nRichnessBins
         
         cfg['separateClasses'] = pms.separateClasses
+        cfg['analyzeZeroDegreeFields'] = pms.analyzeZeroDegreeFields
         
         cfg['nRandomIterations'] = pms.nRandomIterations
         cfg['nRandomBins'] = pms.nRandomBins
@@ -119,6 +125,7 @@ else:
         cfg['nodeShapes'] = pms.nodeShapes
         cfg['bottomShape'] = pms.bottomShape
         cfg['edgeWidth'] = pms.edgeWidth
+        cfg['edgeAlpha'] = pms.edgeAlpha
         cfg['cliqueTopColor'] = pms.cliqueTopColor
         cfg['nonCliqueColor'] = pms.nonCliqueColor
         cfg['nonCliqueAlpha'] = pms.nonCliqueAlpha
@@ -135,9 +142,12 @@ else:
         cfg['dataColor'] = pms.dataColor
         cfg['dataMarker'] = pms.dataMarker
         cfg['dataLineWidth'] = pms.dataLineWidth
+        cfg['histWidth'] = pms.histWidth
+        cfg['fieldHistWidth'] = pms.fieldHistWidth
         
         cfg['savePathBase'] = pms.savePathBase
         cfg['degreeSaveName'] = pms.degreeSaveName + '_' + year + '.pdf'
+        cfg['degreeHistogramSaveName'] = pms.degreeHistogramSaveName + '_' + year + '.pdf'
         cfg['networkSaveName'] = pms.networkSaveName + '_' + year + '.pdf'
         cfg['cliquesSaveName'] = pms.cliqueSaveName + '_' + year
         cfg['cliqueHeatmapSaveName'] = pms.cliqueHeatmapSaveName + '_' + year + '.pdf'
@@ -146,8 +156,12 @@ else:
         cfg['relativeDiversitySaveName'] = pms.relativeDiversitySaveName + year + '.pdf'
         cfg['diversityVsBottomIndexSaveName'] = pms.diversityVsBottomIndexSaveName + '_' + year + '.pdf'
         cfg['diversityVsTopIndexSaveName'] = pms.diversityVsTopIndexSaveName + '_' + year + '.pdf'
+        cfg['fieldHistogramClassesSaveName'] = pms.fieldHistogramClassesSaveName + '_' + year + '.pdf'
+        cfg['fieldHistogramSaveName'] = pms.fieldHistogramSaveName + '_' + year + '.pdf'
         
         bnet = functions.createBipartite(cfg)
+        functions.getDegreeHistogram(bnet, cfg)
+        functions.getFieldHistogram(bnet,cfg)
         bnet, nZeroDegree = functions.pruneBipartite(bnet)
     #    print str(nZeroDegree) + ' zero degree nodes removed'
         lowPercentileNodes,highPercentileNodes = functions.findTopNodesInPercentile(bnet,pms.lowDegreePercentile,pms.highDegreePercentile,cfg)
@@ -173,7 +187,7 @@ else:
         functions.compareAgainstRandom(bnet,cfg,measures)
         
         # for analyzing starness, let's remove from stars the nodes that participate also in other cliques
-        cliques, cliqueInfo = functions.pruneStars(bnet,cliques,cliqueInfo)
+        cliques, cliqueInfo = functions.pruneStars(bnet,cliques,cliqueInfo,ignoreNonMembers=cfg['ignoreNonMembers'],nonMemberClass=cfg['nonMemberClass'])
         functions.visualizeBicliques(bnet,cliqueInfo,cfg)
     #    #functions.createCliqueIndexHeatmap(cliqueInfo, cfg)
         starness = functions.getStarness(bnet,cliqueInfo)

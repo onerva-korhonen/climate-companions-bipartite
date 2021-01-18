@@ -107,7 +107,9 @@ staticNetworkInputPath = '/media/onerva/0012-D687/aallon-tyokoneelta/lappari/mis
                   
 companyColumnNames = ['Alias:', 'Member:']
 eventColumnNames = ['Alias:', 'Event:']
-linkColumnNames = ['Event:', 'Participant:']
+linkColumnNames = ['Event:', 'Participant:','Weight:']
+
+csvSeparator = ';'
 
 # distributions and binning
 nTopDegreeBins = 20
@@ -120,6 +122,8 @@ lowDegreePercentile = 25
 highDegreePercentile = 75
 
 separateClasses = True # should top degree distribution be drawn separately for different membership classes?
+
+analyzeZeroDegreeFields = True # should the field histogram be plotted separately for zero-degree nodes?
 
 # comparison against random
 nRandomIterations = 1000
@@ -148,7 +152,8 @@ nonMemberNodeShape = 'd'
 HKINodeShape = '^'
 nodeShapes = [businessMemberNodeShape, otherMemberNodeShape, nonMemberNodeShape, HKINodeShape]
 bottomShape = 'o'
-edgeWidth = 0.5
+edgeWidth = 'weight'
+edgeAlpha = 0.5
 
 cliqueTopColor = 'r'
 nonCliqueColor = 'k'
@@ -170,12 +175,14 @@ randomColor = 'k'
 randomMarker = '.'
 randomAlpha = 0.2
 
-
+histWidth = 0.75
+fieldHistWidth = 0.2
 
 
 # save paths
 savePathBase = '/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/tulokset_jan_2021/'
 degreeSaveName = 'degree-distributions'
+degreeHistogramSaveName = '/degree_histograms'
 degreeNodeDictionarySaveName = 'companies-per-degree'
 networkSaveName = 'network'
 cliqueSaveName = 'network-cliques'
@@ -185,3 +192,5 @@ comparisonVsRandomSaveName = 'comparison-vs-random'
 relativeDiversitySaveName = 'relative-diversity'
 diversityVsBottomIndexSaveName = 'diversity-vs-n-events'
 diversityVsTopIndexSaveName = 'diveristy-vs-n-companies'
+fieldHistogramClassesSaveName = 'field-histogram-classes'
+fieldHistogramSaveName = 'field_histogram'

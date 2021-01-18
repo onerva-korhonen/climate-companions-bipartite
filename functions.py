@@ -15,6 +15,7 @@ import random
 from networkx.algorithms import bipartite
 from scipy.stats import binned_statistic, binned_statistic_2d, ttest_1samp
 from itertools import combinations
+from collections import Counter
 
 # Functions for reading metadata
 
@@ -33,6 +34,7 @@ def readNodes(cfg):
     cfg: dict, contains:
         inputPath: str, path to the input csv file
         columnNames: list of strs, column names in the csv file (default ['Alias', 'Name', 'FoB', 'Membership class'])
+        csvSeparator: str, separator used when reading the csv files
         
     Returns:
     --------
@@ -45,11 +47,13 @@ def readNodes(cfg):
         columnNames= cfg['columnNames']
     else:
         columnNames = ['Alias', 'Name', 'FoB', 'Membership class']
+    if 'csvSeparator' in cfg.keys():
+        sep = cfg['csvSeparator']
+    else:
+        sep = ','
     
-    nodeData = pd.read_csv(inputPath,sep=';')
+    nodeData = pd.read_csv(inputPath,sep=sep)
     nodeInfo = []
-    
-    #import pdb; pdb.set_trace()
     
     for columnIndex, columnName in enumerate(columnNames):
         dlist = []
@@ -70,6 +74,7 @@ def readLinks(cfg):
     -----------
     cfg: dict, contains:
         inputPath: str, path to the input csv file
+        csvSeparator: str, separator used when reading the csv files
         
     Returns:
     --------
@@ -80,22 +85,26 @@ def readLinks(cfg):
         columnNames= cfg['columnNames']
     else:
         columnNames = ['Source', 'Target']
+    if 'csvSeparator' in cfg.keys():
+        sep = cfg['csvSeparator']
+    else:
+        sep = ','
     
-    linkData = pd.read_csv(inputPath, sep=';')
+    linkData = pd.read_csv(inputPath, sep=sep)
     links = []
     
     sources = linkData[columnNames[0]]
     targets = linkData[columnNames[1]]
     
-    for source, target in zip(sources,targets):
-        links.append((source,target))
+    if 'Weight:' in columnNames:
+        weights = [float(weight) for weight in linkData['Weight:']]
+        for source, target, weight in zip(sources,targets, weights):
+            links.append((source,target,weight))
+    else:
+        for source, target in zip(sources, targets):
+            links.append((source, target))
     
     return links
-
-    
-    
-    
-    
     
 # Functions for network construction
     
@@ -250,6 +259,8 @@ def createBipartite(cfg):
             the color for bottom (event) nodes
         bottomShape: str
             the shape of bottom (event) nodes
+        edgeWidth: float or str
+            the width of edges in visualization; set 'weight' to use individual edge weights (creates a weighted network)
         
     Returns:
     --------
@@ -283,6 +294,10 @@ def createBipartite(cfg):
         cfg['columnNames'] = cfg['linkColumnNames']
     else:
         cfg['columnNames'] = ['Source','Target']
+    if 'edgeWidth' in cfg.keys():
+        weightedEdges = cfg['edgeWidth'] == 'weight'
+    else:
+        weightedEdges = False
     links = readLinks(cfg)
     for link in links:
         source = link[0]
@@ -290,7 +305,11 @@ def createBipartite(cfg):
         if not source in bnet.nodes or not target in bnet.nodes:
             print 'Error in link'
             print link
-    bnet.add_edges_from(links)
+            
+    if weightedEdges:
+        bnet.add_weighted_edges_from(links)
+    else:
+        bnet.add_edges_from(links)
     
     return bnet
     
@@ -337,6 +356,7 @@ def getDegreeDistributions(bnet, cfg):
         separateClasses: bln, if True, the top degree distribution is plotted separately for
                          for each membership class (node attribute 'class') in addition to
                          the distribution of all top nodes
+        classes: list of strs, the possible membership classes
         classColors: list of strs, colors for plotting the degree distributions of different
                      top node classes if separateClasses == True
         
@@ -391,9 +411,9 @@ def getDegreeDistributions(bnet, cfg):
     ax.set_xlabel('Degree')
     ax.set_ylabel('PDF')
     ax.set_title('Companies (top nodes)')
+    ax.legend()
     
-    bottomDegrees = nx.degree(bnet, bottom)
-    bottomDegrees = dict(bottomDegrees)
+    bottomDegrees = dict(nx.degree(bnet, bottom))
     bottomDegree = bottomDegrees.values()
     bottomPdf, bottomBinCenters = getDistribution(bottomDegree, nBottomBins)
     
@@ -408,7 +428,94 @@ def getDegreeDistributions(bnet, cfg):
     plt.tight_layout()
     plt.savefig(savePath,format='pdf',bbox_inches='tight')
     
+    plt.close()
+    
     return topDegrees, topPdfAll, topBinCentersAll, bottomDegrees, bottomPdf, bottomBinCenters
+
+def getDegreeHistogram(bnet, cfg):
+    """
+    Plots an unnormalized histogram of degrees of top and bottom nodes. "Bins"
+    of the histogram are the integer values ranging from the smallest degree to
+    the largest one.
+    
+    Parameters:
+    -----------
+    bnet: networkx.Graph(), bipartite
+    cfg: dict, contains:
+        savePathBase: str, a base path (e.g. to a shared folder) for saving figures
+        degreeHistogramSaveName: str, name of the file where to save the degree distribution plots
+        topColor: str, color for plotting the histogram for top nodes
+        bottomColor: str, color for plotting the histogram for bottom nodes
+        separateClasses: bln, if True, the top histobram is plotted separately for
+                         for each membership class (node attribute 'class') in addition to
+                         the distribution of all top nodes
+        classes: list of strs, the possible membership classes
+        classColors: list of strs, colors for plotting the histograms of different
+                     top node classes if separateClasses == True
+        histWidth: double, relative wdith of the histogram bars compared to the bin width
+                     
+    Returns:
+    --------
+    no direct output, saves the histogram to the given path
+    """
+    topColor = cfg['topColor']
+    bottomColor = cfg['bottomColor']  
+    savePath = cfg['savePathBase'] + cfg['degreeHistogramSaveName']
+    separateClasses = cfg['separateClasses']
+    if 'histWidth' in cfg.keys():
+        histWidth = cfg['histWidth']
+    else:
+        histWidth = None
+    
+    top, bottom = getTopAndBottom(bnet)
+    topDegrees = dict(nx.degree(bnet,top)) # degrees returns a DegreeView so this is required for accessing values
+    bottomDegrees = dict(nx.degree(bnet, bottom)).values()
+    
+    topBins = np.arange(np.min(topDegrees.values()),np.max(topDegrees.values())+1) - 0.5
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(121)
+    
+    if separateClasses:
+        classColors = cfg['classColors']
+        classes = cfg['classes']
+        nodes = dict(bnet.nodes(data=True))
+        
+        degrees = [topDegrees.values()]
+        
+        for mclass in classes:
+            classDegrees = []
+            for topNode in top:
+                if nodes[topNode]['class'] == mclass:
+                    classDegrees.append(topDegrees[topNode])
+            degrees.append(classDegrees)
+            
+        colors = [topColor] + classColors
+        labels = ['All companies (top nodes)'] + classes
+
+        ax.hist(degrees, topBins, color=colors, rwidth=histWidth, label=labels)
+    
+    else:
+        _, _, _ = ax.hist(topDegrees.values(),topBins,color=topColor,rwidth=histWidth)
+    
+    ax.set_xlabel('Degree')
+    ax.set_ylabel('Count')
+    ax.set_title('Companies (top nodes)')
+    ax.legend()
+    
+    ax = fig.add_subplot(122)
+    
+    bottomBins = np.arange(np.min(bottomDegrees),np.max(bottomDegrees)+1) - 0.5
+    _, _, _ = ax.hist(bottomDegrees,bottomBins,color=bottomColor,rwidth=histWidth)
+    
+    ax.set_xlabel('Degree')
+    ax.set_ylabel('Count')
+    ax.set_title('Events (bottom nodes)')
+    
+    plt.tight_layout()
+    plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    
+    plt.close()
 
 def getDensity(bnet):
     """
@@ -477,6 +584,8 @@ def findTopNodesInPercentile(bnet,lowPercentile,highPercentile,cfg):
     plt.tight_layout()
     plt.savefig(savePath,format='pdf',bbox_inches='tight')
     
+    plt.close()
+    
     return lowPercentileNodes,highPercentileNodes
 
 def getDegreeNodeDictionary(bnet,cfg,nameKey='Member:'):
@@ -517,8 +626,160 @@ def getDegreeNodeDictionary(bnet,cfg,nameKey='Member:'):
     df.to_csv(savePath,index=None,header=True)
     
     return degreeDict
-                
 
+def getFieldHistogram(bnet, cfg):
+    """
+    Finds the unique fields of business and creates a bar plot showing their
+    counts. There is also an option for doing this separately for 0-degree nodes
+    and other nodes.
+    
+    Parameters:
+    -----------
+    bnet: networkx.Graph(), a bipartite network
+    cfg: a dictionary containing:
+        analyzeZeroDegreeFields: bln, if True, the bar plot is plotted separately for
+                                 nodes with degree 0
+        classes: list of strs, the possible membership classes
+        topColor: str, color for plotting the bars (the same color generally used for
+                  all visualizations related to top nodes)
+        classColors: list of strs, colors for plotting the histograms of different
+                     top node classes if separateClasses == True
+        fieldHistWidth: float, width of the bars
+        savePathBase: str, a base path (e.g. to a shared folder) for saving figures
+        fieldHistogramSaveName: str, path for saving the  bar plot
+        
+        
+    Returns:
+    --------
+    No direct output, saves the histogram(s) to the given path
+    """
+    analyzeZero = cfg['analyzeZeroDegreeFields']
+    topColor = cfg['topColor']
+    classColors = cfg['classColors']
+    classes = cfg['classes']
+    width = cfg['fieldHistWidth']
+    
+    top, _ = getTopAndBottom(bnet)
+    fieldsOfBusiness = []
+    allFields = nx.get_node_attributes(bnet,'tag')
+    allClasses = nx.get_node_attributes(bnet,'class')
+    for node in top:
+        fieldsOfBusiness.append(allFields[node])
+    uniqueFields = set(fieldsOfBusiness)
+    classOccurrences = {}
+    if analyzeZero:
+        zeroClassOccurrences = {}
+    for mclass in classes:
+        classOccurrences[mclass] = {field:0 for field in uniqueFields}
+        if analyzeZero:
+            zeroClassOccurrences[mclass] = {field:0 for field in uniqueFields}
+    for node in top:
+        if analyzeZero and nx.degree(bnet,node) == 0:
+            zeroClassOccurrences[allClasses[node]][allFields[node]] += 1
+        else:
+            classOccurrences[allClasses[node]][allFields[node]] += 1
+    occurrences = {field:0 for field in uniqueFields}
+    if analyzeZero:
+        zeroOccurrences = {field:0 for field in uniqueFields}
+    for node in top:
+        if analyzeZero and nx.degree(bnet,node) == 0:
+            zeroOccurrences[allFields[node]] += 1
+        else:
+            occurrences[allFields[node]] += 1
+            
+    fig = plt.figure(1)
+    classfig = plt.figure(2)
+    
+    if analyzeZero:
+        plt.figure(1)
+        ax = plt.subplot(121)
+        ax.barh(list(zeroOccurrences.keys()),list(zeroOccurrences.values()),color=topColor)
+        ax.set_xlabel('Count')
+        ax.set_ylabel('Field')
+        ax.set_title('Zero-degree nodes')
+        
+        plt.figure(2)
+        ax = plt.subplot(121)
+        zeroFields = list(zeroClassOccurrences[classes[0]].keys())
+        zeroClassValues = np.array([[zeroClassOccurrences[mclass][field] for field in zeroFields] for mclass in classes])
+            
+        y = np.arange(len(zeroFields))
+        nClasses = len(classes)
+        classY = [(1-nClasses)/2. + i for i in range(nClasses)][::-1]
+        for x, center, mclass, color in zip(zeroClassValues, classY, classes, classColors):
+            ax.barh(y+center*width,x+1,color=color,height=width,label=mclass)
+        ax.set_yticks(y)
+        ax.set_yticklabels(zeroFields)
+        ax.set_xticklabels(str(i) for i in range(-1,np.amax(zeroClassValues)))
+        ax.legend()
+            
+        ax.set_xlabel('Count')
+        ax.set_ylabel('Field')
+        ax.set_title('Zero-degree nodes')
+        
+        plt.figure(1)
+        ax = plt.subplot(122)
+        ax.barh(list(occurrences.keys()),list(occurrences.values()),color=topColor)
+        ax.set_xlabel('Count')
+        ax.set_ylabel('Field')
+        ax.set_title('Other nodes')
+        fig.tight_layout()
+        
+        plt.figure(2)
+        ax = plt.subplot(122)
+        fields = list(classOccurrences[classes[0]].keys())
+        classValues = np.array([[classOccurrences[mclass][field] for field in fields] for mclass in classes])
+
+        for x, center, mclass, color in zip(classValues, classY, classes, classColors):
+            ax.barh(y+center*width,x+1,color=color,height=width,label=mclass)
+        ax.set_yticks(y)
+        ax.set_yticklabels(fields)
+        ax.set_xticklabels([str(i) for i in range(-1,np.max(classValues))])
+        ax.legend()
+
+        ax.set_xlabel('Count')
+        ax.set_ylabel('Field')
+        ax.set_title('Other nodes')
+        classfig.tight_layout()
+        
+    else:
+        plt.figure(1)
+        ax = plt.subplot(111)
+        ax.barh(list(occurrences.keys()),list(occurrences.values()),color=topColor)
+        ax.set_xlabel('Count')
+        ax.set_ylabel('Field')
+        fig.tight_layout()
+        
+        plt.figure(2)
+        ax = plt.subplot(111)
+        fields = list(classOccurrences[classes[0]].keys())
+        classValues = np.array([[zeroClassOccurrences[mclass][field] for field in fields] for mclass in classes])
+            
+        y = np.arange(len(fields))
+        nClasses = len(classes)
+        classY = [(1-nClasses)/2. + i for i in range(nClasses)][::-1]
+        for x, center, mclass, color in zip(classValues, classY, classes, classColors):
+            ax.barh(y+center*width,x+1,color=color,height=width,label=mclass)
+        ax.set_yticks(y)
+        ax.set_yticklabels(fields)
+        ax.set_xticklabels([str(i) for i in range(-1,np.amax(classValues))])
+        ax.legend()
+
+        ax.set_xlabel('Count')
+        ax.set_ylabel('Field')
+        fig.tight_layout()
+    
+    savePath = cfg['savePathBase'] + cfg['fieldHistogramSaveName']
+    classesSavePath = cfg['savePathBase'] + cfg['fieldHistogramClassesSaveName']
+    
+    plt.figure(1)
+    plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    plt.close(1)
+    
+    plt.figure(2)
+    plt.savefig(classesSavePath,format='pdf',bbox_inches='tight')
+    plt.close(2)
+    
 # Clique analysis
     
 def stuffNetwork(bnet):
@@ -633,7 +894,7 @@ def getCliqueIndices(bnet, cliques):
     
     return cliqueInfo
     
-def pruneStars(bnet, cliques, cliqueInfo, ignoreNonMembers, nonMemberClass='NM'):
+def pruneStars(bnet, cliques, cliqueInfo, ignoreNonMembers=False, nonMemberClass='NM'):
     """
     Removes from bistars all top nodes (companies) that participate in any other
     cliques besides the bistar. Bistar is a clique where one bottom node (event)
@@ -669,7 +930,6 @@ def pruneStars(bnet, cliques, cliqueInfo, ignoreNonMembers, nonMemberClass='NM')
              with the pruned versions
     cliqueInfo: list of dicts, updated info for the updated clique list
     """
-    #import pdb; pdb.set_trace()
     cliquesToRemove = []
     infosToRemove = []
     bottomOnlyCliques = []
@@ -764,6 +1024,8 @@ def createCliqueIndexHeatmap(cliqueInfo, cfg):
     
     savePath = cfg['savePathBase'] + cfg['cliqueHeatmapSaveName']
     plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    
+    plt.close()
         
 def getStarness(bnet,cliqueInfo):
     """
@@ -898,7 +1160,6 @@ def createRandomBipartite(bnet, ignoreNonMembers=False, nonMemberClass=''):
     --------
     randNet: networkx.Graph(), a randomly wired bipartite
     """
-    import pdb; pdb.set_trace()
     top, bottom = getTopAndBottom(bnet) 
     if ignoreNonMembers:
         nonMembers = getNonMembers(bnet,nonMemberClass)
@@ -1010,7 +1271,7 @@ def compareAgainstRandom(bnet,cfg,measures):
             randNet = createRandomBipartite(bnet,ignoreNonMembers,nonMemberClass)
             randNet,_ = pruneBipartite(randNet)
             cliques, cliqueInfo = findBicliques(randNet)
-            cliques, cliqueInfo = pruneStars(randNet,cliques,cliqueInfo,ignoreNonMembers,nonMemberClass)
+            cliques, cliqueInfo = pruneStars(randNet,cliques,cliqueInfo,ignoreNonMembers=False)
             randStarness.append(getStarness(bnet,cliqueInfo))
         t,p = ttest_1samp(randStarness,starness)
         randLabel = 'Starness of random networks, mean: ' + str(np.mean(randStarness))
@@ -1027,6 +1288,7 @@ def compareAgainstRandom(bnet,cfg,measures):
         plt.tight_layout()
         savePath = savePathBase + saveNameBase + '_starness.pdf'
         plt.savefig(savePath,format='pdf',bbox_inches='tight')
+        plt.close()
     if 'richness' in measures.keys():
         richness = measures['richness']
         nBins = cfg['nRichnessBins']
@@ -1073,6 +1335,7 @@ def compareAgainstRandom(bnet,cfg,measures):
         plt.tight_layout()
         savePath = savePathBase + saveNameBase + '_richness_dist.pdf'
         plt.savefig(savePath,format='pdf',bbox_inches='tight')
+        plt.close()
 
         fig = plt.figure()
         ax = fig.add_subplot(111)
@@ -1089,6 +1352,7 @@ def compareAgainstRandom(bnet,cfg,measures):
         plt.tight_layout()
         savePath = savePathBase + saveNameBase + '_mean_richness_dist.pdf'
         plt.savefig(savePath,format='pdf',bbox_inches='tight')
+        plt.close()
         
         if 'diversity' in measures.keys():
             fig = plt.figure()
@@ -1103,6 +1367,7 @@ def compareAgainstRandom(bnet,cfg,measures):
             plt.tight_layout()
             savePath = savePathBase + saveNameBase + '_effective_diversity_dist.pdf'
             plt.savefig(savePath,format='pdf',bbox_inches='tight')
+            plt.close()
             
             fig = plt.figure()
             ax = fig.add_subplot(111)
@@ -1121,6 +1386,7 @@ def compareAgainstRandom(bnet,cfg,measures):
             plt.tight_layout()
             savePath = savePathBase + saveNameBase + '_mean_effective_diversity_dist.pdf'
             plt.savefig(savePath,format='pdf',bbox_inches='tight')
+            plt.close()
             
             fig = plt.figure()
             ax = fig.add_subplot(111)
@@ -1140,6 +1406,7 @@ def compareAgainstRandom(bnet,cfg,measures):
             plt.tight_layout()
             savePath = savePathBase + saveNameBase + '_relative_diversity_dist.pdf'
             plt.savefig(savePath,format='pdf',bbox_inches='tight')
+            plt.close()
             
             fig = plt.figure()
             ax = fig.add_subplot(111)
@@ -1153,6 +1420,7 @@ def compareAgainstRandom(bnet,cfg,measures):
             plt.tight_layout()
             savePath = savePathBase + saveNameBase + '_diversity_vs_richness.pdf'
             plt.savefig(savePath,format='pdf',bbox_inches='tight')
+            plt.close()
             
             fig = plt.figure()
             ax = fig.add_subplot(111)
@@ -1165,6 +1433,7 @@ def compareAgainstRandom(bnet,cfg,measures):
             plt.tight_layout()
             savePath = savePathBase + saveNameBase + '_relative_diversity_vs_size.pdf'
             plt.savefig(savePath,format='pdf',bbox_inches='tight')
+            plt.close()
         
     elif 'diversity' in measures.keys():
         diversity = measures['diversity']
@@ -1191,12 +1460,8 @@ def compareAgainstRandom(bnet,cfg,measures):
         ax.legend()
         savePath = savePathBase + saveNameBase + '_diversity_dist.pdf'
         plt.savefig(savePath,format='pdf',bbox_inches='tight')
+        plt.close()
 
-        
-            
-        
-            
-    
     
 # Visualization
     
@@ -1222,8 +1487,10 @@ def drawNetwork(bnet, cfg):
             the shape of bottom (event) nodes
         nodeSize: int
             size of nodes in the visualization
-        edgeWidth: double
-            width of network edges
+        edgeWidth: double or str
+            width of network edges, set to 'weight' to use individual edge weights
+        edgeAlpha: double
+            opacity of edges
         savePathBase: str
             a base path (e.g. to a shared folder) for saving figures
         networkSaveName: str
@@ -1243,6 +1510,10 @@ def drawNetwork(bnet, cfg):
     bottomShape = cfg['bottomShape']
     nodeSize = cfg['nodeSize']
     edgeWidth = cfg['edgeWidth']
+    if 'edgeAlpha' in cfg.keys():
+        edgeAlpha = cfg['edgeAlpha']
+    else:
+        edgeAlpha = 1
     
     top, bottom = getTopAndBottom(bnet)
     
@@ -1262,13 +1533,21 @@ def drawNetwork(bnet, cfg):
                     taggedNodes.append(topn)
             nx.draw_networkx_nodes(bnet,pos,ax=ax,nodelist=taggedNodes,node_color=networkColors(i),node_shape=nodeShapes[j],
                                node_size=nodeSize,label=tag)
-    
-    nx.draw_networkx_edges(bnet,pos,width=edgeWidth)
+            
+    if edgeWidth == 'weight':
+        sortedEdges = [(edge[0],edge[1]) for edge in bnet.edges()]
+        weights = [bnet[edge[0]][edge[1]]['weight'] for edge in sortedEdges]
+        nx.draw_networkx_edges(bnet, pos=pos, edgelist=sortedEdges, width=weights, alpha=edgeAlpha)
+    else:
+        nx.draw_networkx_edges(bnet,pos,width=edgeWidth,alpha=edgeAlpha)
+        
     #ax.legend()
     plt.axis('off')    
     
     savePath = cfg['savePathBase'] + cfg['networkSaveName']
     plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    
+    plt.close()
     
 def visualizeBicliques(bnet, cliqueInfo, cfg):
     """
@@ -1286,7 +1565,8 @@ def visualizeBicliques(bnet, cliqueInfo, cfg):
         nonCliqueColor: str, color of the nodes not belonging to the clique
         nonCliqueAlpha: double, transparency of the non-clique nodes
         nodeSize: int, size of nodes in the visualization
-        edgeWidth: double, width of network edges
+        edgeWidth: double or str, width of network edges; set to 'weight' to use individual edge weights
+        edgeAlpha: double, opacity of edges
         savePathBase: str, a base path (e.g. to a shared folder) for saving figures
         cliquesSaveName: str, name of the file where to save the clique visualization
         
@@ -1300,6 +1580,10 @@ def visualizeBicliques(bnet, cliqueInfo, cfg):
     nonCliqueAlpha = cfg['nonCliqueAlpha']
     nodeSize = cfg['nodeSize']
     edgeWidth = cfg['edgeWidth']
+    if 'edgeAlpha' in cfg.keys():
+        edgeAlpha = cfg['edgeAlpha']
+    else:
+        edgeAlpha = 1
     
     saveName = cfg['cliquesSaveName']
     
@@ -1315,11 +1599,17 @@ def visualizeBicliques(bnet, cliqueInfo, cfg):
         nx.draw_networkx_nodes(bnet,pos=pos,nodelist=topCliqueNodes,node_size=nodeSize,node_color=topColor)
         nx.draw_networkx_nodes(bnet,pos=pos,nodelist=bottomCliqueNodes,node_size=nodeSize,node_color=bottomColor)
         nx.draw_networkx_nodes(bnet,pos=pos,nodelist=nonCliqueNodes,node_size=nodeSize,node_color=nonCliqueColor,alpha=nonCliqueAlpha)
-        nx.draw_networkx_edges(bnet,pos=pos,width=edgeWidth)
+        if edgeWidth == 'weight':
+            edges = bnet.edges(data=True)
+            weights = [bnet[edge[0]][edge[1]]['weight'] for edge in edges]
+            nx.draw_networkx_edges(bnet,pos=pos,width=weights,alpha=edgeAlpha)
+        else:
+            nx.draw_networkx_edges(bnet,pos=pos,width=edgeWidth,alpha=edgeAlpha)
         plt.axis('off')  
         
         savePath = cfg['savePathBase'] + saveName + '_' + str(i) + '.pdf'
         plt.savefig(savePath,format='pdf',bbox_inches='tight')
+        plt.close()
         
 def plotRichnessVsDiversity(richnesses,diversities,cfg):
     """
@@ -1352,6 +1642,8 @@ def plotRichnessVsDiversity(richnesses,diversities,cfg):
     
     savePath = cfg['savePathBase'] + cfg['diversitySaveName']
     plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    
+    plt.close()
     
 def plotRelativeDiversity(cliques,richnesses,diversities,cfg):
     """
@@ -1397,6 +1689,8 @@ def plotRelativeDiversity(cliques,richnesses,diversities,cfg):
     
     savePath = cfg['savePathBase'] + cfg['relativeDiversitySaveName']
     plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    
+    plt.close()
 
 def plotDiversityVsIndices(cliqueInfo,richnesses,diversities,cfg):
     """
@@ -1454,6 +1748,7 @@ def plotDiversityVsIndices(cliqueInfo,richnesses,diversities,cfg):
     bottomAx4.set_ylabel('Clique size')
     bottomFig.tight_layout()
     plt.savefig(bottomSavePath,format='pdf',bbox_inches='tight')
+    plt.close()
     
     topFig = plt.figure()
     topAx1 = topFig.add_subplot(221)
@@ -1475,12 +1770,7 @@ def plotDiversityVsIndices(cliqueInfo,richnesses,diversities,cfg):
     topAx4.set_ylabel('Clique size')
     topFig.tight_layout()
     plt.savefig(topSavePath,format='pdf',bbox_inches='tight')
-    
-        
-    
-    
-    
-    
+    plt.close()
     
     
 # Accessories:
