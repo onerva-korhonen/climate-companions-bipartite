@@ -98,7 +98,7 @@ manualLinkInputPaths = []
                   #'/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2015_2016.csv',
                   #'/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2017_2018.csv',
                   #'/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_all_271018.csv']
-years = ['2015_2016']#['11-12','13-14','15-16','17-18','all']
+years = ['2017_2018']#,'2013_2014','2015_2016','2017_2018','all']#['11-12','13-14','15-16','17-18','all']
 linkInputStem = '/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin_uusi/Links_'
 linkInputExtension = '_uusi.csv'
 linkInputPaths = getLinkInputPaths(years, linkInputStem, linkInputExtension, manualLinkInputPaths)

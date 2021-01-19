@@ -170,6 +170,9 @@ else:
         densities.append(density)
     #    #functions.getDegreeDistributions(bnet, cfg)
         functions.drawNetwork(bnet,cfg)
+        cfg['skipNonMembersInVisualization'] = True
+        cfg['networkSaveName'] = pms.networkSaveName + '_' + year + '_without_nonmembers.pdf'
+        functions.drawNetwork(bnet,cfg) # repeat network drawing without non-member nodes
         cliques, cliqueInfo = functions.findBicliques(bnet)
         nCliques.append(len(cliques))
         richnesses, diversities, counts, majorFields = functions.getCliqueFieldDiversityWrapper(bnet,cliqueInfo)

@@ -64,7 +64,7 @@ def readNodes(cfg):
         
     return nodeInfo, columnNames
     
-def readLinks(cfg):
+def readLinks(cfg,weightedLinks):
     """
     Reads the link information from a csv file. The default column names are ['Source', 'Target'] but other
     names can be given as parameters. Note that the identifiers of source and target nodes in the file must
@@ -75,6 +75,7 @@ def readLinks(cfg):
     cfg: dict, contains:
         inputPath: str, path to the input csv file
         csvSeparator: str, separator used when reading the csv files
+    weightedLinks: bln, if True, links should be read as weighted
         
     Returns:
     --------
@@ -96,7 +97,7 @@ def readLinks(cfg):
     sources = linkData[columnNames[0]]
     targets = linkData[columnNames[1]]
     
-    if 'Weight:' in columnNames:
+    if 'Weight:' in columnNames and weightedLinks:
         weights = [float(weight) for weight in linkData['Weight:']]
         for source, target, weight in zip(sources,targets, weights):
             links.append((source,target,weight))
@@ -288,6 +289,8 @@ def createBipartite(cfg):
         cfg['columnNames'] = ['Alias', 'Name']
     bnet = addNodes(cfg, bnet, bipartiteClass=1)
     
+    #import pdb; pdb.set_trace()
+    
     # Reading link data, adding links
     cfg['inputPath'] = cfg['linkInputPath']
     if 'linkColumnNames' in cfg.keys():
@@ -298,7 +301,7 @@ def createBipartite(cfg):
         weightedEdges = cfg['edgeWidth'] == 'weight'
     else:
         weightedEdges = False
-    links = readLinks(cfg)
+    links = readLinks(cfg,weightedEdges)
     for link in links:
         source = link[0]
         target = link[1]
@@ -466,12 +469,14 @@ def getDegreeHistogram(bnet, cfg):
         histWidth = cfg['histWidth']
     else:
         histWidth = None
+        
+    #import pdb; pdb.set_trace()
     
     top, bottom = getTopAndBottom(bnet)
     topDegrees = dict(nx.degree(bnet,top)) # degrees returns a DegreeView so this is required for accessing values
     bottomDegrees = dict(nx.degree(bnet, bottom)).values()
     
-    topBins = np.arange(np.min(topDegrees.values()),np.max(topDegrees.values())+1) - 0.5
+    topBins = np.arange(np.min(topDegrees.values())-0.5,np.max(topDegrees.values())+1.5)
     
     fig = plt.figure()
     ax = fig.add_subplot(121)
@@ -481,7 +486,7 @@ def getDegreeHistogram(bnet, cfg):
         classes = cfg['classes']
         nodes = dict(bnet.nodes(data=True))
         
-        degrees = [topDegrees.values()]
+        degrees = []
         
         for mclass in classes:
             classDegrees = []
@@ -490,8 +495,8 @@ def getDegreeHistogram(bnet, cfg):
                     classDegrees.append(topDegrees[topNode])
             degrees.append(classDegrees)
             
-        colors = [topColor] + classColors
-        labels = ['All companies (top nodes)'] + classes
+        colors = classColors
+        labels = classes
 
         ax.hist(degrees, topBins, color=colors, rwidth=histWidth, label=labels)
     
@@ -505,7 +510,7 @@ def getDegreeHistogram(bnet, cfg):
     
     ax = fig.add_subplot(122)
     
-    bottomBins = np.arange(np.min(bottomDegrees),np.max(bottomDegrees)+1) - 0.5
+    bottomBins = np.arange(np.min(bottomDegrees)-0.5,np.max(bottomDegrees)+1.5)
     _, _, _ = ax.hist(bottomDegrees,bottomBins,color=bottomColor,rwidth=histWidth)
     
     ax.set_xlabel('Degree')
@@ -707,10 +712,10 @@ def getFieldHistogram(bnet, cfg):
         nClasses = len(classes)
         classY = [(1-nClasses)/2. + i for i in range(nClasses)][::-1]
         for x, center, mclass, color in zip(zeroClassValues, classY, classes, classColors):
-            ax.barh(y+center*width,x+1,color=color,height=width,label=mclass)
+            ax.barh(y+center*width,x+1,color=color,height=width,label=mclass,left=-1)
         ax.set_yticks(y)
         ax.set_yticklabels(zeroFields)
-        ax.set_xticklabels(str(i) for i in range(-1,np.amax(zeroClassValues)))
+        plt.xlim([-1,np.max(zeroClassValues)+1])
         ax.legend()
             
         ax.set_xlabel('Count')
@@ -731,10 +736,10 @@ def getFieldHistogram(bnet, cfg):
         classValues = np.array([[classOccurrences[mclass][field] for field in fields] for mclass in classes])
 
         for x, center, mclass, color in zip(classValues, classY, classes, classColors):
-            ax.barh(y+center*width,x+1,color=color,height=width,label=mclass)
+            ax.barh(y+center*width,x+1,color=color,height=width,label=mclass,left=-1)
         ax.set_yticks(y)
         ax.set_yticklabels(fields)
-        ax.set_xticklabels([str(i) for i in range(-1,np.max(classValues))])
+        plt.xlim([-1,np.max(classValues)+1])
         ax.legend()
 
         ax.set_xlabel('Count')
@@ -762,7 +767,7 @@ def getFieldHistogram(bnet, cfg):
             ax.barh(y+center*width,x+1,color=color,height=width,label=mclass)
         ax.set_yticks(y)
         ax.set_yticklabels(fields)
-        ax.set_xticklabels([str(i) for i in range(-1,np.amax(classValues))])
+        #plt.xlim([-1,np.max(classValues)])
         ax.legend()
 
         ax.set_xlabel('Count')
@@ -1477,6 +1482,10 @@ def drawNetwork(bnet, cfg):
             the field of business tags
         classes: list of strs
             the possible membership classes
+        skipNonMembersInVisualization: bln 
+            if True, non-member nodes are not visualized
+        nonMemberClass: str
+            the membership class (class attribute) of non-members
         networkColors: matplotlib.cmap
             colors associated with different fields of business
         bottomNetworkColor: str
@@ -1499,9 +1508,7 @@ def drawNetwork(bnet, cfg):
     Returns:
     --------
     no direct output, saves the network visualization as pdf
-    """
-    #import pdb; pdb.set_trace()
-    
+    """    
     tags = cfg['tags']    
     classes = cfg['classes']
     networkColors = cfg['networkColors']
@@ -1514,6 +1521,17 @@ def drawNetwork(bnet, cfg):
         edgeAlpha = cfg['edgeAlpha']
     else:
         edgeAlpha = 1
+    if 'skipNonMembersInVisualization' in cfg.keys():
+        ignoreNonMembers = cfg['skipNonMembersInVisualization']
+    else:
+        ignoreNonMembers = False
+    
+    if ignoreNonMembers:
+        nonMemberClass = cfg['nonMemberClass']
+        classes = list(classes)
+        nodeShapes = list(nodeShapes)
+        nodeShapes.pop(classes.index(nonMemberClass))
+        classes.remove(nonMemberClass)
     
     top, bottom = getTopAndBottom(bnet)
     
@@ -1533,13 +1551,26 @@ def drawNetwork(bnet, cfg):
                     taggedNodes.append(topn)
             nx.draw_networkx_nodes(bnet,pos,ax=ax,nodelist=taggedNodes,node_color=networkColors(i),node_shape=nodeShapes[j],
                                node_size=nodeSize,label=tag)
-            
+
+
     if edgeWidth == 'weight':
-        sortedEdges = [(edge[0],edge[1]) for edge in bnet.edges()]
+        sortedEdges = list(bnet.edges())
+        if ignoreNonMembers:
+            for edge in bnet.edges():
+                if bnet.nodes(data=True)[edge[0]].get('class') == nonMemberClass:
+                    sortedEdges.remove(edge)
+                elif bnet.nodes(data=True)[edge[1]].get('class') == nonMemberClass:
+                    sortedEdges.remove(edge)
         weights = [bnet[edge[0]][edge[1]]['weight'] for edge in sortedEdges]
         nx.draw_networkx_edges(bnet, pos=pos, edgelist=sortedEdges, width=weights, alpha=edgeAlpha)
     else:
-        nx.draw_networkx_edges(bnet,pos,width=edgeWidth,alpha=edgeAlpha)
+        edges = list(bnet.edges())
+        if ignoreNonMembers:
+            for edge in bnet.edges():
+                if bnet.nodes(data=True)[edge[0]].get('class') == nonMemberClass \
+                or bnet.nodes(data=True)[edge[1]].get('class') == nonMemberClass:
+                    edges.remove(edge)
+        nx.draw_networkx_edges(bnet,pos,edgelist=edges,width=edgeWidth,alpha=edgeAlpha)
         
     #ax.legend()
     plt.axis('off')    
