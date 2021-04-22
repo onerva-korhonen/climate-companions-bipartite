@@ -38,7 +38,7 @@ def categorical_cmap(nc, nsc, cmap, continuous=False):
 
 def getLinkInputPaths(years, linkInputStem, extension='.csv', manualLinkInputPaths=[]):
     """
-    A function for generating a list of link input pahts. They're tried
+    A function for generating a list of link input paths. They're tried
     to generate from a file name stem and year, but if the file corresponding
     to the generated name doesn't exist, the name is picked from the manually
     entered list instead.
@@ -80,6 +80,14 @@ def getLinkInputPaths(years, linkInputStem, extension='.csv', manualLinkInputPat
     return linkInputPaths
 
 # input
+# NOTE on link input paths: Link input paths are expected to follow a shared structure:
+# linkInputStem + year + linkInputExtension
+# If some of the paths don't follow this structure, they can be given using the manualLinkInputPaths
+# that contains an element for each input path; for those paths that follow the shared structure, the elements
+# can be arbitrary (e.g. ''). The staticNetworkInputPath (to the full network) should be given separately since there are some 
+# analysis that are performed only for the static network. However, to get all analysis performed on both the full network
+# and networks obtained in time windows, the static network path should be included in the linkInputPaths as well (probably
+# it need to be given through manualLinkInputPaths)
 companyInputPath = '/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin_uusi/Member_alias.csv'
 eventInputPath = '/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin_uusi/Events_alias_uusi.csv'
 manualLinkInputPaths = []
@@ -103,11 +111,13 @@ linkInputStem = '/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_project
 linkInputExtension = '_uusi.csv'
 linkInputPaths = getLinkInputPaths(years, linkInputStem, linkInputExtension, manualLinkInputPaths)
 
-staticNetworkInputPath = '/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin_uusi/Links_all_uusi.csv'
+staticNetworkInputPath = '/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin_uusi/Links_all.csv'
                   
-companyColumnNames = ['Alias:', 'Member:']
+companyColumnNames = ['Alias:', 'Member:','Index:']
 eventColumnNames = ['Alias:', 'Event:']
 linkColumnNames = ['Event:', 'Participant:','Weight:']
+
+indexKey = 'Index:'
 
 csvSeparator = ';'
 
@@ -168,6 +178,8 @@ cliqueHeatmapBottomLabels = [str(tick+1) for tick in cliqueHeatmapBottomTicks]
 identityLineStyle = '--'
 scatterMarker = '*'
 
+classMarkers = ['*','.','','o']
+
 dataColor = 'r'
 dataMarker = '*'
 dataLineWidth = 3.
@@ -194,3 +206,4 @@ diversityVsBottomIndexSaveName = 'diversity-vs-n-events'
 diversityVsTopIndexSaveName = 'diveristy-vs-n-companies'
 fieldHistogramClassesSaveName = 'field-histogram-classes'
 fieldHistogramSaveName = 'field_histogram'
+degreeIndexScatterSaveName = 'degree_index_scatter'

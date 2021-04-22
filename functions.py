@@ -13,7 +13,7 @@ import numpy as np
 import matplotlib.pylab as plt
 import random
 from networkx.algorithms import bipartite
-from scipy.stats import binned_statistic, binned_statistic_2d, ttest_1samp
+from scipy.stats import binned_statistic, binned_statistic_2d, ttest_1samp, pearsonr
 from itertools import combinations
 from collections import Counter
 
@@ -785,6 +785,95 @@ def getFieldHistogram(bnet, cfg):
     plt.savefig(classesSavePath,format='pdf',bbox_inches='tight')
     plt.close(2)
     
+def createDegreeIndexScatter(bnet, cfg):
+    """
+    Creates a scatter plot of companies' performance index as a function of their
+    degree (participation in events) and calculates Pearson correlation coefficient
+    between the index and degree. This can be done either for all top nodes (companies)
+    at once or separately for each class of member nodes (non-members don't report their
+    results and thus always have performance index of 0).
+    
+    Parameters:
+    -----------
+    bnet: networkx.Graph(), bipartite
+    cfg: a dictionary containing:
+        indexKey: str, the name of the node attribute containing the performance index values (default: 'index')
+        separateClasses: bln, if True, the top degree distribution is plotted separately for
+                         for each membership class (node attribute 'class') in addition to
+                         the distribution of all top nodes (default: False)
+        nonMemberClass: str,  the membership class (class attribute) of those nodes that should not be included
+                        in the scatter. Non-member companies or instances don't report, which gives them the performance
+                        index of 0. (default: '')
+        classes: list of strs, the possible membership classes
+        topColor: str, color for plotting the scatter if separateClasses == False (the same color generally used for
+                  all visualizations related to top nodes)
+        classColors: list of strs, colors for plotting the scatters of different
+                     top node classes if separateClasses == True
+        classMarkers: list of strs, markers for plotting the scatter of different top
+                      node classes if separateClasses == True
+        scatterMarker: str, marker style used if separateClasses == False (default = '*')
+        savePathBase: str, a base path (e.g. to a shared folder) for saving figures
+        degreeIndexScatterSaveName: str, path for saving the  bar plot
+        
+    Returns:
+    --------
+    No direct output, saves the scatter to the given path
+    """
+    indexKey = cfg.get('indexKey','index')
+    separateClasses = cfg.get('separateClasses',False)
+    nonMemberClass = cfg.get('nonMemberClass','')
+    marker = cfg.get('scatterMarker','*')
+    savePath = cfg['savePathBase'] + cfg['degreeIndexScatterSaveName']
+    
+    top, _ = getTopAndBottom(bnet)
+    topDegrees = dict(nx.degree(bnet,top)) # degrees returns a DegreeView so this is required for accessing values
+    indices = nx.get_node_attributes(bnet,indexKey)
+    nodes = dict(bnet.nodes(data=True))
+    
+    if separateClasses:
+        classColors = list(cfg['classColors'])
+        classes = list(cfg['classes'])
+        classMarkers = list(cfg['classMarkers'])
+        classColors.pop(classes.index(nonMemberClass))
+        classMarkers.pop(classes.index(nonMemberClass))
+        classes.remove(nonMemberClass)
+        
+        degrees = []
+        
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        
+        for mclass, classColor, classMarker in zip(classes, classColors, classMarkers):
+            classDegrees = []
+            classIndices = []
+            for topNode in top:
+                if nodes[topNode]['class'] == mclass:
+                    classDegrees.append(topDegrees[topNode])
+                    classIndices.append(indices[topNode])
+            corr, p = pearsonr(classDegrees, classIndices) # this is scipy.stats.pearsonr
+            plt.plot(classDegrees,classIndices,color=classColor,linestyle='',marker=classMarker,label=mclass+' pearson r: '+str(corr)+', p: '+str(p))        
+   
+    else:
+        topColor = cfg['topColor']
+        degrees = []
+        sortedIndices = []
+        
+        for topNode in top:
+            if not nodes[topNode]['class'] == nonMemberClass:
+                degrees.append(topDegrees[topNode])
+                sortedIndices.append(indices[topNode])
+        
+        corr, p = pearsonr(degrees,sortedIndices) # this is scipy.stats.pearsonr
+        
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        plt.plot(degrees, sortedIndices, color=topColor, linestyle='', marker=marker, label='pearson r: '+str(corr)+', p: '+str(p))
+        
+    ax.set_xlabel('Degree')
+    ax.set_ylabel('Performance index')
+    ax.legend()
+    plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    
 # Clique analysis
     
 def stuffNetwork(bnet):
@@ -794,7 +883,7 @@ def stuffNetwork(bnet):
     
     Parameters:
     -----------
-    bnet: networkx.Graph(), bipartite
+    bnet: networkx.Graph(), a bipartite network
     
     Returns:
     --------

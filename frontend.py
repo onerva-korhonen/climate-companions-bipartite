@@ -68,7 +68,6 @@ if numbersOnly:
         cfg['fieldHistogramSaveName'] = pms.fieldHistogramSaveName + '_' + year + '.pdf'
     
         bnet = functions.createBipartite(cfg)
-        #import pdb; pdb.set_trace()
         degreeDict = functions.getDegreeNodeDictionary(bnet,cfg)
         bnet, nZeroDegree = functions.pruneBipartite(bnet)
      
@@ -88,64 +87,73 @@ if numbersOnly:
             print 'Jaccard index, years ' + yeari + ', ' + yearj + ': ' + str(jaccard)
 
 else:   
-    for year, linkInputPath in zip(years,linkInputPaths):
-        cfg = {}
+    cfg = {}
     
-        cfg['companyInputPath'] = pms.companyInputPath
-        cfg['eventInputPath'] = pms.eventInputPath
+    cfg['companyInputPath'] = pms.companyInputPath
+    cfg['eventInputPath'] = pms.eventInputPath
+    cfg['linkInputPath'] = pms.staticNetworkInputPath
+    cfg['companyColumnNames'] = pms.companyColumnNames
+    cfg['eventColumnNames'] = pms.eventColumnNames
+    cfg['linkColumnNames'] = pms.linkColumnNames
+    cfg['tags'] = pms.tags
+    cfg['classes'] = pms.membershipClasses
+    cfg['csvSeparator'] = pms.csvSeparator
+    cfg['indexKey'] = pms.indexKey
+    
+    cfg['ignoreNonMembers'] = pms.ignoreNonMembers
+    cfg['nonMemberClass'] = pms.nonMemberClass
+    
+    cfg['nTopDegreeBins'] = pms.nTopDegreeBins
+    cfg['nBottomDegreeBins'] = pms.nBottomDegreeBins
+    cfg['cliqueHeatmapTopBins'] = pms.cliqueHeatmapTopBins
+    cfg['cliqueHeatmapBottomBins'] = pms.cliqueHeatmapBottomBins
+    cfg['nRichnessBins'] = pms.nRichnessBins
+    
+    cfg['separateClasses'] = pms.separateClasses
+    cfg['analyzeZeroDegreeFields'] = pms.analyzeZeroDegreeFields
+    
+    cfg['nRandomIterations'] = pms.nRandomIterations
+    cfg['nRandomBins'] = pms.nRandomBins
+    
+    cfg['topColor'] = pms.topColor
+    cfg['bottomColor'] = pms.bottomColor
+    cfg['classColors'] = pms.classColors
+    cfg['networkColors'] = pms.networkColors
+    cfg['networkBottomColor'] = pms.networkBottomColor
+    cfg['nodeSize'] = pms.nodeSize
+    cfg['nodeShapes'] = pms.nodeShapes
+    cfg['bottomShape'] = pms.bottomShape
+    cfg['edgeWidth'] = pms.edgeWidth
+    cfg['edgeAlpha'] = pms.edgeAlpha
+    cfg['cliqueTopColor'] = pms.cliqueTopColor
+    cfg['nonCliqueColor'] = pms.nonCliqueColor
+    cfg['nonCliqueAlpha'] = pms.nonCliqueAlpha
+    cfg['cliqueHeatmapCmap'] = pms.cliqueHeatmapCmap
+    cfg['cliqueHeatmapTopTicks'] = pms.cliqueHetamapTopTicks
+    cfg['cliqueHeatmapBottomTicks'] = pms.cliqueHeatmapBottomTicks
+    cfg['cliqueHeatmapTopLabels'] = pms.cliqueHeatmapTopLabels
+    cfg['cliqueHeatmapBottomLabels'] = pms.cliqueHeatmapBottomLabels
+    cfg['identityLineStyle'] = pms.identityLineStyle
+    cfg['scatterMarker'] = pms.scatterMarker
+    cfg['classMarkers'] = pms.classMarkers
+    cfg['randomColor'] = pms.randomColor
+    cfg['randomMarker'] = pms.randomMarker
+    cfg['randomAlpha'] = pms.randomAlpha
+    cfg['dataColor'] = pms.dataColor
+    cfg['dataMarker'] = pms.dataMarker
+    cfg['dataLineWidth'] = pms.dataLineWidth
+    cfg['histWidth'] = pms.histWidth
+    cfg['fieldHistWidth'] = pms.fieldHistWidth
+    
+    cfg['savePathBase'] = pms.savePathBase
+    cfg['degreeIndexScatterSaveName'] = pms.degreeIndexScatterSaveName + '_all.pdf'
+    
+    bnet = functions.createBipartite(cfg)
+    functions.createDegreeIndexScatter(bnet, cfg)
+        
+    for year, linkInputPath in zip(years,linkInputPaths):
         cfg['linkInputPath'] = linkInputPath
-        cfg['companyColumnNames'] = pms.companyColumnNames
-        cfg['eventColumnNames'] = pms.eventColumnNames
-        cfg['linkColumnNames'] = pms.linkColumnNames
-        cfg['tags'] = pms.tags
-        cfg['classes'] = pms.membershipClasses
-        cfg['csvSeparator'] = pms.csvSeparator
         
-        cfg['ignoreNonMembers'] = pms.ignoreNonMembers
-        cfg['nonMemberClass'] = pms.nonMemberClass
-        
-        cfg['nTopDegreeBins'] = pms.nTopDegreeBins
-        cfg['nBottomDegreeBins'] = pms.nBottomDegreeBins
-        cfg['cliqueHeatmapTopBins'] = pms.cliqueHeatmapTopBins
-        cfg['cliqueHeatmapBottomBins'] = pms.cliqueHeatmapBottomBins
-        cfg['nRichnessBins'] = pms.nRichnessBins
-        
-        cfg['separateClasses'] = pms.separateClasses
-        cfg['analyzeZeroDegreeFields'] = pms.analyzeZeroDegreeFields
-        
-        cfg['nRandomIterations'] = pms.nRandomIterations
-        cfg['nRandomBins'] = pms.nRandomBins
-        
-        cfg['topColor'] = pms.topColor
-        cfg['bottomColor'] = pms.bottomColor
-        cfg['classColors'] = pms.classColors
-        cfg['networkColors'] = pms.networkColors
-        cfg['networkBottomColor'] = pms.networkBottomColor
-        cfg['nodeSize'] = pms.nodeSize
-        cfg['nodeShapes'] = pms.nodeShapes
-        cfg['bottomShape'] = pms.bottomShape
-        cfg['edgeWidth'] = pms.edgeWidth
-        cfg['edgeAlpha'] = pms.edgeAlpha
-        cfg['cliqueTopColor'] = pms.cliqueTopColor
-        cfg['nonCliqueColor'] = pms.nonCliqueColor
-        cfg['nonCliqueAlpha'] = pms.nonCliqueAlpha
-        cfg['cliqueHeatmapCmap'] = pms.cliqueHeatmapCmap
-        cfg['cliqueHeatmapTopTicks'] = pms.cliqueHetamapTopTicks
-        cfg['cliqueHeatmapBottomTicks'] = pms.cliqueHeatmapBottomTicks
-        cfg['cliqueHeatmapTopLabels'] = pms.cliqueHeatmapTopLabels
-        cfg['cliqueHeatmapBottomLabels'] = pms.cliqueHeatmapBottomLabels
-        cfg['identityLineStyle'] = pms.identityLineStyle
-        cfg['scatterMarker'] = pms.scatterMarker
-        cfg['randomColor'] = pms.randomColor
-        cfg['randomMarker'] = pms.randomMarker
-        cfg['randomAlpha'] = pms.randomAlpha
-        cfg['dataColor'] = pms.dataColor
-        cfg['dataMarker'] = pms.dataMarker
-        cfg['dataLineWidth'] = pms.dataLineWidth
-        cfg['histWidth'] = pms.histWidth
-        cfg['fieldHistWidth'] = pms.fieldHistWidth
-        
-        cfg['savePathBase'] = pms.savePathBase
         cfg['degreeSaveName'] = pms.degreeSaveName + '_' + year + '.pdf'
         cfg['degreeHistogramSaveName'] = pms.degreeHistogramSaveName + '_' + year + '.pdf'
         cfg['networkSaveName'] = pms.networkSaveName + '_' + year + '.pdf'
