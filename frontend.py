@@ -99,6 +99,8 @@ else:
     cfg['classes'] = pms.membershipClasses
     cfg['csvSeparator'] = pms.csvSeparator
     cfg['indexKey'] = pms.indexKey
+    cfg['degreeNormalizationKey'] = pms.degreeNormalizationKey
+    cfg['nodesToExcludeFromScatter'] = pms.nodesToExcludeFromScatter
     
     cfg['ignoreNonMembers'] = pms.ignoreNonMembers
     cfg['nonMemberClass'] = pms.nonMemberClass
@@ -111,6 +113,7 @@ else:
     
     cfg['separateClasses'] = pms.separateClasses
     cfg['analyzeZeroDegreeFields'] = pms.analyzeZeroDegreeFields
+    cfg['normalizeDegreeInScatter'] = pms.normalizeDegreeInScatter
     
     cfg['nRandomIterations'] = pms.nRandomIterations
     cfg['nRandomBins'] = pms.nRandomBins
@@ -136,6 +139,7 @@ else:
     cfg['identityLineStyle'] = pms.identityLineStyle
     cfg['scatterMarker'] = pms.scatterMarker
     cfg['classMarkers'] = pms.classMarkers
+    cfg['markerAlpha'] = pms.markerAlpha
     cfg['randomColor'] = pms.randomColor
     cfg['randomMarker'] = pms.randomMarker
     cfg['randomAlpha'] = pms.randomAlpha
@@ -146,7 +150,7 @@ else:
     cfg['fieldHistWidth'] = pms.fieldHistWidth
     
     cfg['savePathBase'] = pms.savePathBase
-    cfg['degreeIndexScatterSaveName'] = pms.degreeIndexScatterSaveName + '_all.pdf'
+    cfg['degreeIndexScatterSaveName'] = pms.degreeIndexScatterSaveName + '_by_classes_degree_normalized.pdf'
     
     bnet = functions.createBipartite(cfg)
     functions.createDegreeIndexScatter(bnet, cfg)

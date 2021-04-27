@@ -113,11 +113,12 @@ linkInputPaths = getLinkInputPaths(years, linkInputStem, linkInputExtension, man
 
 staticNetworkInputPath = '/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin_uusi/Links_all.csv'
                   
-companyColumnNames = ['Alias:', 'Member:','Index:']
+companyColumnNames = ['Alias:', 'Member:','Index:','Max degree:']
 eventColumnNames = ['Alias:', 'Event:']
 linkColumnNames = ['Event:', 'Participant:','Weight:']
 
 indexKey = 'Index:'
+degreeNormalizationKey = 'Max degree:'
 
 csvSeparator = ';'
 
@@ -135,6 +136,8 @@ separateClasses = True # should top degree distribution be drawn separately for 
 
 analyzeZeroDegreeFields = True # should the field histogram be plotted separately for zero-degree nodes?
 
+normalizeDegreeInScatter = True # should degree be normalized by its theoretical max value in the degree-index scatter?
+
 # comparison against random
 nRandomIterations = 1000
 nRandomBins = 20
@@ -144,6 +147,7 @@ ignoreNonMembers = True
 tags = ['C','CM','Co','E','I','II','LT','S','SD','RE','NGO','PS','AG','FPS','OC','HKI_1','HKI_2']
 membershipClasses = ['BM','OM','NM','HKI']
 nonMemberClass = 'NM'
+nodesToExcludeFromScatter = ['OM_PS3','HKI_1','HKI_2']
 
 cmap = 'cool'
 colors = cm.get_cmap(cmap, lut=len(membershipClasses)+2)
@@ -176,9 +180,10 @@ cliqueHeatmapTopLabels = ['1','10','20','30','40','50','60']
 cliqueHeatmapBottomLabels = [str(tick+1) for tick in cliqueHeatmapBottomTicks]
 
 identityLineStyle = '--'
-scatterMarker = '*'
+scatterMarker = '.'
 
-classMarkers = ['*','.','','o']
+classMarkers = ['.','^','','o']
+markerAlpha = 0.7
 
 dataColor = 'r'
 dataMarker = '*'
@@ -192,7 +197,7 @@ fieldHistWidth = 0.2
 
 
 # save paths
-savePathBase = '/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/tulokset_jan_2021/'
+savePathBase = '/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/tulokset_apr_2021/'
 degreeSaveName = 'degree-distributions'
 degreeHistogramSaveName = '/degree_histograms'
 degreeNodeDictionarySaveName = 'companies-per-degree'

@@ -798,20 +798,25 @@ def createDegreeIndexScatter(bnet, cfg):
     bnet: networkx.Graph(), bipartite
     cfg: a dictionary containing:
         indexKey: str, the name of the node attribute containing the performance index values (default: 'index')
-        separateClasses: bln, if True, the top degree distribution is plotted separately for
-                         for each membership class (node attribute 'class') in addition to
-                         the distribution of all top nodes (default: False)
+        normalizeDegreeInScatter: bln, if True, the degrees are normalized by a given value (e.g. the
+                                  number of events during a company's membership period) before plotting the scatter. These
+                                  values should be given as node attributes. (default: False)
+        degreeNormalizationKey: str, the name of the node attribute containing the degree normalization values
+        separateClasses: bln, if True, the scatter is plotted separately for
+                         for each membership class (node attribute 'class') (default: False)
         nonMemberClass: str,  the membership class (class attribute) of those nodes that should not be included
                         in the scatter. Non-member companies or instances don't report, which gives them the performance
                         index of 0. (default: '')
         classes: list of strs, the possible membership classes
+        nodesToExcludeFromScatter: list of strs, nodes that for some reason shouldn't be incuded in the scatter (default: [])
         topColor: str, color for plotting the scatter if separateClasses == False (the same color generally used for
                   all visualizations related to top nodes)
         classColors: list of strs, colors for plotting the scatters of different
                      top node classes if separateClasses == True
         classMarkers: list of strs, markers for plotting the scatter of different top
                       node classes if separateClasses == True
-        scatterMarker: str, marker style used if separateClasses == False (default = '*')
+        scatterMarker: str, marker style used if separateClasses == False (default: '*')
+        markerAlpha: float, alpha (transparency) value used to create the scatter (default: 0.5)
         savePathBase: str, a base path (e.g. to a shared folder) for saving figures
         degreeIndexScatterSaveName: str, path for saving the  bar plot
         
@@ -820,9 +825,12 @@ def createDegreeIndexScatter(bnet, cfg):
     No direct output, saves the scatter to the given path
     """
     indexKey = cfg.get('indexKey','index')
+    normalizeDegree = cfg.get('normalizeDegreeInScatter',False)
     separateClasses = cfg.get('separateClasses',False)
     nonMemberClass = cfg.get('nonMemberClass','')
+    nodesToExclude = cfg.get('nodesToExcludeFromScatter',[])
     marker = cfg.get('scatterMarker','*')
+    alpha = cfg.get('markerAlpha',0.5)
     savePath = cfg['savePathBase'] + cfg['degreeIndexScatterSaveName']
     
     top, _ = getTopAndBottom(bnet)
@@ -830,6 +838,10 @@ def createDegreeIndexScatter(bnet, cfg):
     indices = nx.get_node_attributes(bnet,indexKey)
     nodes = dict(bnet.nodes(data=True))
     
+    if normalizeDegree:
+        assert 'degreeNormalizationKey' in cfg.keys(), "Please give 'degreeNormalizationKey' to read degree normalization values for creating the degree-index scatter"
+        normalizationValues = nx.get_node_attributes(bnet,cfg['degreeNormalizationKey'])
+        
     if separateClasses:
         classColors = list(cfg['classColors'])
         classes = list(cfg['classes'])
@@ -846,12 +858,17 @@ def createDegreeIndexScatter(bnet, cfg):
         for mclass, classColor, classMarker in zip(classes, classColors, classMarkers):
             classDegrees = []
             classIndices = []
+            nodenames = []
             for topNode in top:
-                if nodes[topNode]['class'] == mclass:
-                    classDegrees.append(topDegrees[topNode])
+                if nodes[topNode]['class'] == mclass and not topNode in nodesToExclude:
+                    nodenames.append(topNode)
+                    if normalizeDegree:
+                        classDegrees.append(topDegrees[topNode]/float(normalizationValues[topNode]))
+                    else:
+                        classDegrees.append(topDegrees[topNode])
                     classIndices.append(indices[topNode])
             corr, p = pearsonr(classDegrees, classIndices) # this is scipy.stats.pearsonr
-            plt.plot(classDegrees,classIndices,color=classColor,linestyle='',marker=classMarker,label=mclass+' pearson r: '+str(corr)+', p: '+str(p))        
+            plt.plot(classDegrees,classIndices,color=classColor,linestyle='',marker=classMarker,alpha=alpha,label=mclass+' pearson r: '+str(corr)+', p: '+str(p))        
    
     else:
         topColor = cfg['topColor']
@@ -859,15 +876,18 @@ def createDegreeIndexScatter(bnet, cfg):
         sortedIndices = []
         
         for topNode in top:
-            if not nodes[topNode]['class'] == nonMemberClass:
-                degrees.append(topDegrees[topNode])
+            if not nodes[topNode]['class'] == nonMemberClass and not topNode in nodesToExclude:
+                if normalizeDegree:
+                    degrees.append(topDegrees[topNode]/float(normalizationValues[topNode]))
+                else:
+                    degrees.append(topDegrees[topNode])
                 sortedIndices.append(indices[topNode])
         
         corr, p = pearsonr(degrees,sortedIndices) # this is scipy.stats.pearsonr
         
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        plt.plot(degrees, sortedIndices, color=topColor, linestyle='', marker=marker, label='pearson r: '+str(corr)+', p: '+str(p))
+        plt.plot(degrees,sortedIndices,color=topColor,linestyle='',marker=marker,alpha=alpha,label='pearson r: '+str(corr)+', p: '+str(p))
         
     ax.set_xlabel('Degree')
     ax.set_ylabel('Performance index')
