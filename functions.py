@@ -818,7 +818,7 @@ def createDegreeIndexScatter(bnet, cfg):
         scatterMarker: str, marker style used if separateClasses == False (default: '*')
         markerAlpha: float, alpha (transparency) value used to create the scatter (default: 0.5)
         savePathBase: str, a base path (e.g. to a shared folder) for saving figures
-        degreeIndexScatterSaveName: str, path for saving the  bar plot
+        degreeIndexScatterSaveName: str, path for saving the scatter
         
     Returns:
     --------
@@ -850,18 +850,14 @@ def createDegreeIndexScatter(bnet, cfg):
         classMarkers.pop(classes.index(nonMemberClass))
         classes.remove(nonMemberClass)
         
-        degrees = []
-        
         fig = plt.figure()
         ax = fig.add_subplot(111)
         
         for mclass, classColor, classMarker in zip(classes, classColors, classMarkers):
             classDegrees = []
             classIndices = []
-            nodenames = []
             for topNode in top:
                 if nodes[topNode]['class'] == mclass and not topNode in nodesToExclude:
-                    nodenames.append(topNode)
                     if normalizeDegree:
                         classDegrees.append(topDegrees[topNode]/float(normalizationValues[topNode]))
                     else:
@@ -893,6 +889,142 @@ def createDegreeIndexScatter(bnet, cfg):
     ax.set_ylabel('Performance index')
     ax.legend()
     plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    
+def createDegreeIndexHeatmap(bnet,cfg):
+    """
+    Creates a heatmap (3D histogram) of top node (company) degrees, performance indices
+    and performance index change based on index and index change values given as node
+    attributes. This can be done either for all top nodes (companies)
+    at once or separately for each class of member nodes (non-members don't report their
+    results and thus always have performance index of 0).
+    
+    Parameters:
+    -----------
+    bnet: networkx.Graph(), bipartite
+    cfg: a dictionary containing:
+        indexKey: str, the name of the node attribute containing the performance index values (default: 'index')
+        indexChangeKey: str, the name of the node attribute containing the performance index change values (default: 'index change')
+        normalizeDegreeInScatter: bln, if True, the degrees are normalized by a given value (e.g. the
+                                  number of events during a company's membership period) before plotting the heatmap. These
+                                  values should be given as node attributes. (default: False)
+        degreeNormalizationKey: str, the name of the node attribute containing the degree normalization values
+        separateClasses: bln, if True, the heatmap is plotted separately for
+                         for each membership class (node attribute 'class') (default: False)
+        nonMemberClass: str,  the membership class (class attribute) of those nodes that should not be included
+                        in the heatmap. Non-member companies or instances don't report, which gives them the performance
+                        index of 0. (default: '')
+        classes: list of strs, the possible membership classes
+        nodesToExcludeFromScatter: list of strs, nodes that for some reason shouldn't be incuded in the heatmap (default: [])
+        maskKey: str, the name of the node attribute containing the information about if the node should be included in this
+                 analysis or not (the mask can be used either together with or instead of nodesToExcludeFromScatter) (default: '')
+        nTopDegreeBins: int, number of bins for binning the degrees (default: 20)
+        nIndexBins: int, number of bins for binning the indices (default: 20)
+        degreeIndexHeatmapSaveName: str, path for saving the heatmap
+        
+    Returns:
+    --------
+    No direct output, saves the scatter to the given path
+    """
+    #TODO: write this function. when separateClasses == True, heatmaps should be created as subplots
+    indexKey = cfg.get('indexKey','index')
+    indexChangeKey = cfg.get('indexChangeKey','index change')
+    normalizeDegree = cfg.get('normalizeDegreeInScatter',False)
+    separateClasses = cfg.get('separateClasses',False)
+    nonMemberClass = cfg.get('nonMemberClass','')
+    nodesToExclude = cfg.get('nodesToExcludeFromScatter',[])
+    maskKey = cfg.get('maskKey','')
+    nDegreeBins = cfg.get('nTopDegreeBins',20)
+    nIndexBins = cfg.get('nIndexBins',20)
+    savePath = cfg['savePathBase'] + cfg['degreeIndexHeatmapSaveName']
+    
+    top, _ = getTopAndBottom(bnet)
+    topDegrees = dict(nx.degree(bnet,top)) # degrees returns a DegreeView so this is required for accessing values
+    indices = nx.get_node_attributes(bnet,indexKey)
+    indexChanges = nx.get_node_attributes(bnet,indexChangeKey)
+    nodes = dict(bnet.nodes(data=True))
+    if len(maskKey) > 0:
+        mask = nx.get_node_attributes(bnet,maskKey)
+    else:
+        mask = {topNode:1 for topNode in top}
+    
+    fig = plt.figure()
+    
+    if normalizeDegree:
+        assert 'degreeNormalizationKey' in cfg.keys(), "Please give 'degreeNormalizationKey' to read degree normalization values for creating the degree-index scatter"
+        normalizationValues = nx.get_node_attributes(bnet,cfg['degreeNormalizationKey'])
+        
+    if separateClasses:
+        classes = list(cfg['classes'])
+        classes.remove(nonMemberClass)
+        
+        for i, mclass in enumerate(classes):
+            classDegrees = []
+            classIndices = []
+            classIndexChanges = []
+            for topNode in top:
+                if nodes[topNode]['class'] == mclass and not topNode in nodesToExclude and mask[topNode] > 0:
+                    if normalizeDegree:
+                        classDegrees.append(topDegrees[topNode]/float(normalizationValues[topNode]))
+                    else:
+                        classDegrees.append(topDegrees[topNode])
+                    classIndices.append(indices[topNode])
+                    classIndexChanges.append(indexChanges[topNode])
+            
+            if len(classDegrees) > 0: # if all nodes of the class are excluded, the statistic can't be calculated
+                statistic,xedges,yedges,_ = binned_statistic_2d(classDegrees, classIndices, classIndexChanges, statistic='mean', bins=[nDegreeBins,nIndexBins])     
+                ax = fig.add_subplot(len(classes),1,i+1)
+                
+                im = ax.imshow(statistic,interpolation='none',cmap=cfg['cliqueHeatmapCmap'],aspect='auto',origin='lower',extent=[min(xedges),max(xedges),min(yedges),max(xedges)])
+                ax.autoscale(False)
+                ax.set_xlabel('Degree')
+                ax.set_ylabel('Performance index')
+                ax.tick_params(top='off',right='off')
+                ax.set_title(mclass)
+                cbar = ax.figure.colorbar(im,ax=ax)
+                cbar.ax.set_ylabel('Mean index change', rotation=-90, va="bottom")
+    
+    else:
+        degrees = []
+        sortedIndices = []
+        sortedIndexChanges = []
+        
+        for topNode in top:
+            if not nodes[topNode]['class'] == nonMemberClass and not topNode in nodesToExclude and mask[topNode]>0:
+                if normalizeDegree:
+                    degrees.append(topDegrees[topNode]/float(normalizationValues[topNode]))
+                else:
+                    degrees.append(topDegrees[topNode])
+                sortedIndices.append(indices[topNode])
+                sortedIndexChanges.append(indexChanges[topNode])
+        
+        statistic,xedges,yedges,_ = binned_statistic_2d(degrees, sortedIndices, sortedIndexChanges, statistic='mean', bins=[nDegreeBins,nIndexBins])
+        ax = fig.add_subplot(111)
+        im = ax.imshow(statistic,interpolation='none',cmap=cfg['cliqueHeatmapCmap'],aspect='auto',origin='lower',extent=[min(xedges),max(xedges),min(yedges),max(xedges)])
+        ax.autoscale(False)
+        ax.set_xlabel('Degree')
+        ax.set_ylabel('Performance index')
+        ax.tick_params(top='off',right='off')
+        cbar = ax.figure.colorbar(im,ax=ax)
+        cbar.ax.set_ylabel('Mean index change', rotation=-90, va="bottom")
+            
+    fig.tight_layout()
+    savePath = cfg['savePathBase'] + cfg['degreeIndexHeatmapSaveName']
+    plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    
+    plt.close()
+            
+            
+            
+            
+            
+            
+        
+    
+    
+    
+    
+        
+    
     
 # Clique analysis
     

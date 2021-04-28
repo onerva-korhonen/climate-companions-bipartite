@@ -100,6 +100,8 @@ else:
     cfg['csvSeparator'] = pms.csvSeparator
     cfg['indexKey'] = pms.indexKey
     cfg['degreeNormalizationKey'] = pms.degreeNormalizationKey
+    cfg['indexChangeKey'] = pms.indexChangeKey
+    cfg['maskKey'] = pms.maskKey
     cfg['nodesToExcludeFromScatter'] = pms.nodesToExcludeFromScatter
     
     cfg['ignoreNonMembers'] = pms.ignoreNonMembers
@@ -110,6 +112,7 @@ else:
     cfg['cliqueHeatmapTopBins'] = pms.cliqueHeatmapTopBins
     cfg['cliqueHeatmapBottomBins'] = pms.cliqueHeatmapBottomBins
     cfg['nRichnessBins'] = pms.nRichnessBins
+    cfg['nIndexBins'] = pms.nIndexBins
     
     cfg['separateClasses'] = pms.separateClasses
     cfg['analyzeZeroDegreeFields'] = pms.analyzeZeroDegreeFields
@@ -150,10 +153,12 @@ else:
     cfg['fieldHistWidth'] = pms.fieldHistWidth
     
     cfg['savePathBase'] = pms.savePathBase
-    cfg['degreeIndexScatterSaveName'] = pms.degreeIndexScatterSaveName + '_by_classes_degree_normalized.pdf'
+    cfg['degreeIndexScatterSaveName'] = pms.degreeIndexScatterSaveName + '_all_degree_normalized.pdf'
+    cfg['degreeIndexHeatmapSaveName'] = pms.degreeIndexHeatmapSaveName + '_all_degree_normalized.pdf'
     
     bnet = functions.createBipartite(cfg)
     functions.createDegreeIndexScatter(bnet, cfg)
+    functions.createDegreeIndexHeatmap(bnet, cfg)
         
     for year, linkInputPath in zip(years,linkInputPaths):
         cfg['linkInputPath'] = linkInputPath

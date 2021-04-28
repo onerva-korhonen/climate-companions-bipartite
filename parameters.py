@@ -113,12 +113,14 @@ linkInputPaths = getLinkInputPaths(years, linkInputStem, linkInputExtension, man
 
 staticNetworkInputPath = '/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin_uusi/Links_all.csv'
                   
-companyColumnNames = ['Alias:', 'Member:','Index:','Max degree:']
+companyColumnNames = ['Alias:', 'Member:','Index:','Max degree:','Index slope:','Mask:']
 eventColumnNames = ['Alias:', 'Event:']
 linkColumnNames = ['Event:', 'Participant:','Weight:']
 
 indexKey = 'Index:'
 degreeNormalizationKey = 'Max degree:'
+indexChangeKey = 'Index slope:'
+maskKey = 'Mask:'
 
 csvSeparator = ';'
 
@@ -128,6 +130,7 @@ nBottomDegreeBins = 20
 cliqueHeatmapBottomBins = np.arange(0.5,16.5,1)
 cliqueHeatmapTopBins = np.arange(0.5,68.5,1)
 nRichnessBins = 5
+nIndexBins = 20
 
 lowDegreePercentile = 25
 highDegreePercentile = 75
@@ -212,3 +215,4 @@ diversityVsTopIndexSaveName = 'diveristy-vs-n-companies'
 fieldHistogramClassesSaveName = 'field-histogram-classes'
 fieldHistogramSaveName = 'field_histogram'
 degreeIndexScatterSaveName = 'degree_index_scatter'
+degreeIndexHeatmapSaveName = 'degree_index_heatmap'
