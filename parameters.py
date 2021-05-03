@@ -90,9 +90,9 @@ def getLinkInputPaths(years, linkInputStem, extension='.csv', manualLinkInputPat
 # it need to be given through manualLinkInputPaths)
 companyInputPath = '/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin_uusi/Member_alias.csv'
 eventInputPath = '/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin_uusi/Events_alias_uusi.csv'
-manualLinkInputPaths = []
+manualLinkInputPaths = ['','','','','/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin_uusi/Links_all.csv']
                   #['/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_all_271018.csv',
-                  #'/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2011.csv']
+                  #'/media/onerva/0#012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2011.csv']
                  #['/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2011.csv',
                   #'/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2012.csv',
                   #'/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2013.csv',
@@ -106,7 +106,7 @@ manualLinkInputPaths = []
                   #'/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2015_2016.csv',
                   #'/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2017_2018.csv',
                   #'/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_all_271018.csv']
-years = ['2017_2018']#,'2013_2014','2015_2016','2017_2018','all']#['11-12','13-14','15-16','17-18','all']
+years = ['2011_2012','2013_2014','2015_2016','2017_2018','all']#['11-12','13-14','15-16','17-18','all']
 linkInputStem = '/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin_uusi/Links_'
 linkInputExtension = '_uusi.csv'
 linkInputPaths = getLinkInputPaths(years, linkInputStem, linkInputExtension, manualLinkInputPaths)
@@ -145,6 +145,13 @@ normalizeDegreeInScatter = True # should degree be normalized by its theoretical
 nRandomIterations = 1000
 nRandomBins = 20
 ignoreNonMembers = True
+
+starnessXLims = (0,0.6)
+starnessYLims = (0,0.23)
+richnessXLims = (3,14)
+richnessYLims = (0,0.5)
+relativeDivXLims = (0.6,0.95)
+relativeDivYLims = (0,0.18)
 
 # visualization
 tags = ['C','CM','Co','E','I','II','LT','S','SD','RE','NGO','PS','AG','FPS','OC','HKI_1','HKI_2']
@@ -197,6 +204,9 @@ randomAlpha = 0.2
 
 histWidth = 0.75
 fieldHistWidth = 0.2
+
+richnessLineStyle = '-'
+diversityLineStyle = '--'
 
 
 # save paths

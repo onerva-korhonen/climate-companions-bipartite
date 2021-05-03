@@ -151,6 +151,14 @@ else:
     cfg['dataLineWidth'] = pms.dataLineWidth
     cfg['histWidth'] = pms.histWidth
     cfg['fieldHistWidth'] = pms.fieldHistWidth
+    cfg['starnessXLims'] = pms.starnessXLims
+    cfg['starnessYLims'] = pms.starnessYLims
+    cfg['richnessXLims'] = pms.richnessXLims
+    cfg['richnessYLims'] = pms.richnessYLims
+    cfg['relativeDivXLims'] = pms.relativeDivXLims
+    cfg['relativeDivYLims'] = pms.relativeDivYLims
+    cfg['richnessLineStyle'] = pms.richnessLineStyle
+    cfg['diversityLineStyle'] = pms.diversityLineStyle
     
     cfg['savePathBase'] = pms.savePathBase
     cfg['degreeIndexScatterSaveName'] = pms.degreeIndexScatterSaveName + '_all_degree_normalized.pdf'
@@ -175,6 +183,8 @@ else:
         cfg['diversityVsTopIndexSaveName'] = pms.diversityVsTopIndexSaveName + '_' + year + '.pdf'
         cfg['fieldHistogramClassesSaveName'] = pms.fieldHistogramClassesSaveName + '_' + year + '.pdf'
         cfg['fieldHistogramSaveName'] = pms.fieldHistogramSaveName + '_' + year + '.pdf'
+        
+        cfg['skipNonMembersInVisualization'] = False
         
         bnet = functions.createBipartite(cfg)
         functions.getDegreeHistogram(bnet, cfg)
