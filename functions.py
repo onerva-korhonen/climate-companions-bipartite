@@ -289,8 +289,6 @@ def createBipartite(cfg):
         cfg['columnNames'] = ['Alias', 'Name']
     bnet = addNodes(cfg, bnet, bipartiteClass=1)
     
-    #import pdb; pdb.set_trace()
-    
     # Reading link data, adding links
     cfg['inputPath'] = cfg['linkInputPath']
     if 'linkColumnNames' in cfg.keys():
@@ -522,19 +520,32 @@ def getDegreeHistogram(bnet, cfg):
     
     plt.close()
 
-def getDensity(bnet):
+def getDensity(bnet,excludeNonMembers=False,nonMemberClass=''):
     """
-    Returns density of the bipartite graph.
+    Returns density of the bipartite graph. Includes an option to calculate
+    the density without selected classes of top nodes.
     
     Parameters:
     -----------
     bnet: networkx.Graph(), bipartite
+    excludeNonMembers: bln, if True, the top nodes belonging to the non-member
+                       class are excluded (default = False)
+    nonMemberClass: str, class tag of the nodes to be excluded (default = '')
     
     Returns:
     d: float, density of bnet
     """
     top, _ = getTopAndBottom(bnet)
     d = bipartite.density(bnet,top)
+    
+    if excludeNonMembers:
+        cnet = bnet.copy()
+        ctop,_ = getTopAndBottom(cnet)
+        for node in top:
+            if cnet.nodes(data=True)[node]['class'] == nonMemberClass:
+                cnet.remove_node(node)
+                ctop.remove(node)
+        d = bipartite.density(cnet,ctop)
     return d
 
 def findTopNodesInPercentile(bnet,lowPercentile,highPercentile,cfg):

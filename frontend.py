@@ -17,6 +17,7 @@ years = pms.years
 linkInputPaths = pms.linkInputPaths
 
 topNodes = []
+topNodesWithoutNonmembers = [] # this is needed for calculating Jaccards without non-members
 
 densities = []
 nCliques = []
@@ -25,7 +26,7 @@ meanRichnesses = []
 meanDiversities = []
 meanRelativeDiversities = []
 
-numbersOnly = False
+numbersOnly = True
 
 if numbersOnly:
     cfg = {}
@@ -42,6 +43,7 @@ if numbersOnly:
     
     cfg['ignoreNonMembers'] = pms.ignoreNonMembers
     cfg['nonMemberClass'] = pms.nonMemberClass
+    nodesToExcludeFromDegrees = pms.nodesToExcludeFromDegrees
     
     cfg['topColor'] = pms.topColor
     cfg['networkColors'] = pms.networkColors
@@ -68,11 +70,65 @@ if numbersOnly:
         cfg['fieldHistogramSaveName'] = pms.fieldHistogramSaveName + '_' + year + '.pdf'
     
         bnet = functions.createBipartite(cfg)
+        
+        # Counting the number of members and non-members participating in events in this window
+        assert year[-4::].isdigit(),'Please give the years in a form where the last 4 characters form an integer (e.g. "2011_2012")'
+        iyear = int(year[-4::])
+        top,_ = functions.getTopAndBottom(bnet)
+        tlist = list(top)
+        nyears = [bnet.nodes(data=True)[node][pms.joiningYearKey] for node in tlist]
+        nclasses = [bnet.nodes(data=True)[node]['class'] for node in tlist]
+        degrees = [bnet.degree(node) for node in tlist]
+        mclasses = list(cfg['classes'])
+        mclasses.remove(cfg['nonMemberClass'])
+        for mclass in mclasses:
+            partCount = 0
+            nonpartCount = 0
+            for nyear,nclass,degree in zip(nyears,nclasses,degrees):
+                if nclass == mclass:
+                    if degree > 0:
+                        partCount += 1
+                    elif nyear <= iyear:
+                        nonpartCount += 1
+            print 'In year(s) ' + year + ', in class ' + mclass + ' ' + str(partCount) + ' participants, ' + str(nonpartCount) + ' non-participants'
+        partCount = 0
+        for nyear,nclass,degree in zip(nyears,nclasses,degrees):
+            if nclass == cfg['nonMemberClass'] and degree > 0:
+                partCount += 1
+        print 'In year(s) ' + year + ', in class ' + cfg['nonMemberClass'] + ' ' + str(partCount) + ' participants'
+                
         degreeDict = functions.getDegreeNodeDictionary(bnet,cfg)
         bnet, nZeroDegree = functions.pruneBipartite(bnet)
+        
+        density = functions.getDensity(bnet)
+        densityWithoutNonMembers = functions.getDensity(bnet,excludeNonMembers=True,nonMemberClass=cfg['nonMemberClass'])
+        print 'Density in year(s) ' + year + ': ' + str(density) + ', ' + str(densityWithoutNonMembers) + ' excluding non-members'
+        densities.append(density)
      
         top,bottom = functions.getTopAndBottom(bnet)
         topNodes.append(top)
+        
+        print str(len(bottom)) + ' events organized in year(s) ' + year
+        
+        cnet = bnet.copy() # calculating the events/participant and participants/event requires excluding some nodes, so let's use a copy of the network
+        for node in top:
+            if node in nodesToExcludeFromDegrees: # first removing only the nodes particularly listed for being removed (in our case, the instances of the city of Helsinki that participate in all events and articially increase bottom degree)
+                cnet.remove_node(node)
+        
+        ctop, cbottom = functions.getTopAndBottom(cnet)
+        bottomDegrees = [cnet.degree(node) for node in cbottom]
+        print 'In year(s) ' + year + ', on average ' + str(np.mean(bottomDegrees)) + ' participants per event, min ' + str(min(bottomDegrees)) + ', max ' + str(max(bottomDegrees))
+        
+        for node in ctop:
+            if cnet.nodes(data=True)[node]['class'] == cfg['nonMemberClass']: # now, removing all non-member nodes (that often participate only one event, thus artificially lowering mean events/participant)
+                cnet.remove_node(node)
+        
+        ctop,_ = functions.getTopAndBottom(cnet)
+        topDegrees = [cnet.degree(node) for node in ctop]
+        print 'In year(s) ' + year + ', on average ' + str(np.mean(topDegrees)) + ' events per participant, min ' + str(min(topDegrees)) + ', max ' + str(max(topDegrees))
+        
+        ctopNodes = list(ctop) + nodesToExcludeFromDegrees # before calculating Jaccards without non-members, let's add back the member nodes that were excluded from degree calculations (instances of the city of Helsinki)
+        topNodesWithoutNonmembers.append(ctopNodes)
         
         cliqueInfo = {'topNodes':top,'bottomNodes':bottom,'topIndex':len(top),'bottomIndex':len(bottom),'isBridge':False,'isStar':False}
     
@@ -81,11 +137,18 @@ if numbersOnly:
         print 'Diversity of full network in year(s) ' + year + ': richness: ' + str(richness) + ', effective diversity: ' + str(cliqueDiversity) + ', relative diversity: ' + str(cliqueDiversity/richness)
         print str(nZeroDegree) + ' zero-degree nodes found'
     
-    for i,yeari in enumerate(years):
-        for j,yearj in enumerate(years):
-            jaccard = functions.getJaccardIndex(topNodes[i],topNodes[j])
-            print 'Jaccard index, years ' + yeari + ', ' + yearj + ': ' + str(jaccard)
-
+    jaccards = []
+    jaccardsWithoutNonmembers = []
+    
+    cnet.add_nodes_from(nodesToExcludeFromDegrees) # before calculating Jaccards without non-members, let's add back the member nodes that were excluded from degree calculations (instances of the city of Helsinki)
+    
+    for i in range(len(years)-1):
+        jaccard = functions.getJaccardIndex(topNodes[i],topNodes[i+1])
+        jaccards.append(jaccard)
+        jaccardWithoutNonmembers = functions.getJaccardIndex(topNodesWithoutNonmembers[i],topNodesWithoutNonmembers[i+1])
+        jaccardsWithoutNonmembers.append(jaccardWithoutNonmembers)
+        print 'Jaccard index, years ' + years[i] + ', ' + years[i+1] + ': ' + str(jaccard) + ', without non-members ' + str(jaccardWithoutNonmembers)
+        
 else:   
     cfg = {}
     

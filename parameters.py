@@ -91,29 +91,14 @@ def getLinkInputPaths(years, linkInputStem, extension='.csv', manualLinkInputPat
 companyInputPath = '/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin_uusi/Member_alias.csv'
 eventInputPath = '/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin_uusi/Events_alias_uusi.csv'
 manualLinkInputPaths = ['','','','','/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin_uusi/Links_all.csv']
-                  #['/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_all_271018.csv',
-                  #'/media/onerva/0#012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2011.csv']
-                 #['/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2011.csv',
-                  #'/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2012.csv',
-                  #'/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2013.csv',
-                  #'/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2014.csv',
-                  #'/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2015.csv',
-                  #'/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2016.csv',
-                  #'/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2017.csv',
-                  #'/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2018.csv',
-                  #'/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2011_2012.csv',
-                  #'/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2013_2014.csv',
-                  #'/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2015_2016.csv',
-                  #'/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_2017_2018.csv',
-                  #'/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin/Links_all_271018.csv']
-years = ['2011_2012','2013_2014','2015_2016','2017_2018','all']#['11-12','13-14','15-16','17-18','all']
+years = ['2011_2012','2013_2014','2015_2016','2017_2018','2011_2018'] # the last 4 characters of the year should form an integer
 linkInputStem = '/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin_uusi/Links_'
 linkInputExtension = '_uusi.csv'
 linkInputPaths = getLinkInputPaths(years, linkInputStem, linkInputExtension, manualLinkInputPaths)
 
 staticNetworkInputPath = '/media/onerva/0012-D687/aallon-tyokoneelta/lappari/misc_projects/ilmastokumppanit/Analyysiin_uusi/Links_all.csv'
                   
-companyColumnNames = ['Alias:', 'Member:','Index:','Max degree:','Index slope:','Mask:']
+companyColumnNames = ['Alias:', 'Member:','Index:','Max degree:','Index slope:','Mask:', 'Joined on:']
 eventColumnNames = ['Alias:', 'Event:']
 linkColumnNames = ['Event:', 'Participant:','Weight:']
 
@@ -121,6 +106,7 @@ indexKey = 'Index:'
 degreeNormalizationKey = 'Max degree:'
 indexChangeKey = 'Index slope:'
 maskKey = 'Mask:'
+joiningYearKey = 'Joined on:'
 
 csvSeparator = ';'
 
@@ -147,9 +133,9 @@ nRandomBins = 20
 ignoreNonMembers = True
 
 starnessXLims = (0,0.6)
-starnessYLims = (0,0.23)
+starnessYLims = (0,0.3)
 richnessXLims = (3,14)
-richnessYLims = (0,0.5)
+richnessYLims = (0,0.25)
 relativeDivXLims = (0.6,0.95)
 relativeDivYLims = (0,0.18)
 
@@ -158,6 +144,9 @@ tags = ['C','CM','Co','E','I','II','LT','S','SD','RE','NGO','PS','AG','FPS','OC'
 membershipClasses = ['BM','OM','NM','HKI']
 nonMemberClass = 'NM'
 nodesToExcludeFromScatter = ['OM_PS3','HKI_1','HKI_2']
+# This is for excluding some outlier nodes from the degree - index scatter (OM_PS3 is an error and HKI_1 and HKI_2 instances of the city of Helsinki)
+nodesToExcludeFromDegrees = ['HKI_1','HKI_2'] 
+# We use this to exclude the instances of the City of Helsinki when calculating the average number of participants per event and event per participants
 
 cmap = 'cool'
 colors = cm.get_cmap(cmap, lut=len(membershipClasses)+2)
