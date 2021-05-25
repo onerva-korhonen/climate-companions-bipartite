@@ -26,7 +26,7 @@ meanRichnesses = []
 meanDiversities = []
 meanRelativeDiversities = []
 
-numbersOnly = True
+numbersOnly = False
 
 if numbersOnly:
     cfg = {}

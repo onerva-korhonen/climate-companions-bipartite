@@ -867,6 +867,7 @@ def createDegreeIndexScatter(bnet, cfg):
         for mclass, classColor, classMarker in zip(classes, classColors, classMarkers):
             classDegrees = []
             classIndices = []
+            nodeColors = []
             for topNode in top:
                 if nodes[topNode]['class'] == mclass and not topNode in nodesToExclude:
                     if normalizeDegree:
@@ -874,13 +875,16 @@ def createDegreeIndexScatter(bnet, cfg):
                     else:
                         classDegrees.append(topDegrees[topNode])
                     classIndices.append(indices[topNode])
+                    nodeColors.append(nodes[topNode]['nodeColor'])
+            nodeColors = np.array(nodeColors)        
             corr, p = pearsonr(classDegrees, classIndices) # this is scipy.stats.pearsonr
-            plt.plot(classDegrees,classIndices,color=classColor,linestyle='',marker=classMarker,alpha=alpha,label=mclass+' pearson r: '+str(corr)+', p: '+str(p))        
-   
+            #plt.plot(classDegrees,classIndices,color=classColor,linestyle='',marker=classMarker,alpha=alpha,label=mclass+' pearson r: '+str(corr)+', p: '+str(p))        
+            plt.scatter(classDegrees,classIndices,c=nodeColors,marker=classMarker,alpha=alpha,label=mclass+' pearson r: '+str(corr)+', p: '+str(p))
     else:
-        topColor = cfg['topColor']
+        #topColor = cfg['topColor']
         degrees = []
         sortedIndices = []
+        nodeColors = []
         
         for topNode in top:
             if not nodes[topNode]['class'] == nonMemberClass and not topNode in nodesToExclude:
@@ -889,13 +893,14 @@ def createDegreeIndexScatter(bnet, cfg):
                 else:
                     degrees.append(topDegrees[topNode])
                 sortedIndices.append(indices[topNode])
+                nodeColors.append(nodes[topNode]['nodeColor'])
         
         corr, p = pearsonr(degrees,sortedIndices) # this is scipy.stats.pearsonr
         
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        plt.plot(degrees,sortedIndices,color=topColor,linestyle='',marker=marker,alpha=alpha,label='pearson r: '+str(corr)+', p: '+str(p))
-        
+        #plt.plot(degrees,sortedIndices,color=topColor,linestyle='',marker=marker,alpha=alpha,label='pearson r: '+str(corr)+', p: '+str(p))
+        plt.scatter(degrees,sortedIndices,c=nodeColors,marker=marker,alpha=alpha,label='pearson r: '+str(corr)+', p: '+str(p))
     ax.set_xlabel('Degree')
     ax.set_ylabel('Performance index')
     ax.legend()
