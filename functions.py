@@ -941,7 +941,6 @@ def createDegreeIndexHeatmap(bnet,cfg):
     --------
     No direct output, saves the scatter to the given path
     """
-    #TODO: write this function. when separateClasses == True, heatmaps should be created as subplots
     indexKey = cfg.get('indexKey','index')
     indexChangeKey = cfg.get('indexChangeKey','index change')
     normalizeDegree = cfg.get('normalizeDegreeInScatter',False)
@@ -1029,18 +1028,34 @@ def createDegreeIndexHeatmap(bnet,cfg):
     
     plt.close()
             
-            
-            
-            
-            
-            
-        
+def getFieldwiseMeanDegrees(bnet,ignoreNonMembers=False,nonMemberClass=''):
+    """
+    Calculates the mean degree of top nodes (companies) belonging to different
+    fields of business.
+
+    Parameters:
+    -----------
+    bnet: networkx.Graph(), a bipartite network
+    ignoreNonMembers: bln, should nodes belonging to the non-member class be excluded (default = False)
+    nonMemberClass: str, the class attribute of non-member nodes in bnet (default = '')
     
-    
-    
-    
-        
-    
+    Returns:
+    --------
+    fieldMeanDegrees: dic, average degrees of all fields of business
+    """            
+    top,_ = getTopAndBottom(bnet)
+    fieldDegrees = {}
+    for node in top:
+        if ignoreNonMembers:
+            if bnet.nodes(data=True)[node]['class'] == nonMemberClass:
+                continue
+        field = bnet.nodes(data=True)[node]['tag']
+        if not field in fieldDegrees.keys():
+            fieldDegrees[field] = [bnet.degree[node]]
+        else:
+            fieldDegrees[field].append(bnet.degree[node])
+    fieldMeanDegrees = {field:np.mean(fieldDegrees[field]) for field in fieldDegrees}
+    return fieldMeanDegrees
     
 # Clique analysis
     
@@ -1407,7 +1422,8 @@ def getCliqueFieldDiversityWrapper(bnet,cliqueInfo):
 def createRandomBipartite(bnet, ignoreNonMembers=False, nonMemberClass=''):
     """
     Creates a randomly wired bipartite network with the same number of top and
-    bottom nodes and the same density as a given network.
+    bottom nodes, the same density, and the same distribution of fields of
+    business (values of the 'tag' attribute) as a given network.
     
     Parameters:
     -----------
@@ -1432,11 +1448,17 @@ def createRandomBipartite(bnet, ignoreNonMembers=False, nonMemberClass=''):
                 continue
             else:
                 nEdges += 1
+        top = top.difference(nonMembers)
     else:
         nTop = len(top)
         nEdges = len(bnet.edges())
+    fields = [bnet.nodes(data=True)[node]['tag'] for node in top]
+    np.random.shuffle(fields)
     nBottom = len(bottom)
     randNet = nx.bipartite.gnmk_random_graph(nTop,nBottom,nEdges)
+    top, _ = getTopAndBottom(randNet)
+    for node, field in zip(top,fields):
+        randNet.nodes[node].update({'tag':field})
     return randNet
 
 def shuffleFields(bnet):
@@ -1506,18 +1528,17 @@ def compareAgainstRandom(bnet,cfg,measures):
                relativeDivYLims: tuple of two floats, y axis limits for the relative diversity figure (for autoscaling, leave unset)
                richnessLineStyle: str, linestyle for plotting richness (that will be plotted in the same figure as effective diversity) (default: '-')
                diversityLineStyle: str, linestyle for plotting effective diversity (that will be plotted in the same figure as richness) (default: '--')
+               fieldHistWidth: float, width of the bars in bar plot showing fieldwise mean degrees (used if starness in measures.keys())
                savePathBase: str, a base path (e.g. to a shared folder) for saving figures
                comparisonVsRandomSaveName: str, name of the file where to save visualizations of the comparison
     measures, dict, possible keys:
                     starness: double, starness of the bigraph
                     cliques: list of lists, cliques of the bipartite (each clique presented as a list of nodes)
                     richness: list of ints, numbers of different fields in the cliques
-                    diversity: list of doubles, the effective diversities based on Gini-Simpson index
-                    
+                    diversity: list of doubles, the effective diversities based on Gini-Simpson index 
     Returns:
     --------
     No direct output, saves the test output as figures to the given paths.
-    
     """
     nIters = cfg['nRandomIterations']
     ignoreNonMembers = cfg['ignoreNonMembers']
@@ -1538,12 +1559,21 @@ def compareAgainstRandom(bnet,cfg,measures):
     if 'starness' in measures.keys():
         starness = measures['starness']
         randStarness = []
+        randFieldMeanDegrees = {}
         for i in range(nIters):
             randNet = createRandomBipartite(bnet,ignoreNonMembers,nonMemberClass)
             randNet,_ = pruneBipartite(randNet)
             cliques, cliqueInfo = findBicliques(randNet)
             cliques, cliqueInfo = pruneStars(randNet,cliques,cliqueInfo,ignoreNonMembers=False)
             randStarness.append(getStarness(bnet,cliqueInfo))
+            fieldMeanDegrees = getFieldwiseMeanDegrees(randNet)
+            for field in fieldMeanDegrees:
+                if not field in randFieldMeanDegrees:
+                    randFieldMeanDegrees[field] = fieldMeanDegrees[field]
+                else:
+                    randFieldMeanDegrees[field] += fieldMeanDegrees[field]
+        randFieldMeanDegrees = {field: randFieldMeanDegrees[field]/nIters for field in randFieldMeanDegrees}
+        trueFieldMeanDegrees = getFieldwiseMeanDegrees(bnet,ignoreNonMembers=True,nonMemberClass=nonMemberClass)
         t,p = ttest_1samp(randStarness,starness)
         randLabel = 'Starness of random networks, mean: ' + str(np.mean(randStarness))
         dataLabel = 'True starness: ' + str(starness)
@@ -1562,6 +1592,26 @@ def compareAgainstRandom(bnet,cfg,measures):
         ax.legend()
         plt.tight_layout()
         savePath = savePathBase + saveNameBase + '_starness.pdf'
+        plt.savefig(savePath,format='pdf',bbox_inches='tight')
+        plt.close()
+        
+        plt.figure()
+        ax = plt.subplot(111)
+        
+        width = cfg['fieldHistWidth']
+        fields = trueFieldMeanDegrees.keys()
+        y = np.arange(len(fields))
+        classY = [0.5,-0.5]
+        classValues = np.array([(randFieldMeanDegrees[field],trueFieldMeanDegrees[field]) for field in fields]).T
+        for x, center, label, color in zip(classValues, classY, ['random', 'data'], [randColor,dataColor]):
+            ax.barh(y+center*width,x+1,color=color,height=width,label=label)
+        ax.set_yticks(y)
+        ax.set_yticklabels(fields)
+        ax.legend()
+        ax.set_xlabel('Mean degree')
+        ax.set_ylabel('Field')
+        plt.tight_layout()
+        savePath = savePathBase + saveNameBase + '_fieldwise_mean_degree.pdf'
         plt.savefig(savePath,format='pdf',bbox_inches='tight')
         plt.close()
     if 'richness' in measures.keys():
