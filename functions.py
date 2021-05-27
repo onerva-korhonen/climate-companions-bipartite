@@ -520,7 +520,7 @@ def getDegreeHistogram(bnet, cfg):
     
     plt.close()
 
-def getDensity(bnet,excludeNonMembers=False,nonMemberClass=''):
+def getDensity(bnet,excludeNonMembers=False,nonMemberClasses=[]):
     """
     Returns density of the bipartite graph. Includes an option to calculate
     the density without selected classes of top nodes.
@@ -530,7 +530,7 @@ def getDensity(bnet,excludeNonMembers=False,nonMemberClass=''):
     bnet: networkx.Graph(), bipartite
     excludeNonMembers: bln, if True, the top nodes belonging to the non-member
                        class are excluded (default = False)
-    nonMemberClass: str, class tag of the nodes to be excluded (default = '')
+    nonMemberClasses: list of strs, class tags (the class atribute) of the nodes to be excluded (default = '')
     
     Returns:
     d: float, density of bnet
@@ -542,7 +542,7 @@ def getDensity(bnet,excludeNonMembers=False,nonMemberClass=''):
         cnet = bnet.copy()
         ctop,_ = getTopAndBottom(cnet)
         for node in top:
-            if cnet.nodes(data=True)[node]['class'] == nonMemberClass:
+            if cnet.nodes(data=True)[node]['class'] in nonMemberClasses:
                 cnet.remove_node(node)
                 ctop.remove(node)
         d = bipartite.density(cnet,ctop)
@@ -815,7 +815,7 @@ def createDegreeIndexScatter(bnet, cfg):
         degreeNormalizationKey: str, the name of the node attribute containing the degree normalization values
         separateClasses: bln, if True, the scatter is plotted separately for
                          for each membership class (node attribute 'class') (default: False)
-        nonMemberClass: str,  the membership class (class attribute) of those nodes that should not be included
+        nonMemberClasses: list of str,  the membership classes (class attribute) of those nodes that should not be included
                         in the scatter. Non-member companies or instances don't report, which gives them the performance
                         index of 0. (default: '')
         classes: list of strs, the possible membership classes
@@ -838,7 +838,7 @@ def createDegreeIndexScatter(bnet, cfg):
     indexKey = cfg.get('indexKey','index')
     normalizeDegree = cfg.get('normalizeDegreeInScatter',False)
     separateClasses = cfg.get('separateClasses',False)
-    nonMemberClass = cfg.get('nonMemberClass','')
+    nonMemberClasses = cfg.get('nonMemberClasses',[])
     nodesToExclude = cfg.get('nodesToExcludeFromScatter',[])
     marker = cfg.get('scatterMarker','*')
     alpha = cfg.get('markerAlpha',0.5)
@@ -857,9 +857,10 @@ def createDegreeIndexScatter(bnet, cfg):
         classColors = list(cfg['classColors'])
         classes = list(cfg['classes'])
         classMarkers = list(cfg['classMarkers'])
-        classColors.pop(classes.index(nonMemberClass))
-        classMarkers.pop(classes.index(nonMemberClass))
-        classes.remove(nonMemberClass)
+        for nonMemberClass in nonMemberClasses:
+            classColors.pop(classes.index(nonMemberClass))
+            classMarkers.pop(classes.index(nonMemberClass))
+            classes.remove(nonMemberClass)
         
         fig = plt.figure()
         ax = fig.add_subplot(111)
@@ -887,7 +888,7 @@ def createDegreeIndexScatter(bnet, cfg):
         nodeColors = []
         
         for topNode in top:
-            if not nodes[topNode]['class'] == nonMemberClass and not topNode in nodesToExclude:
+            if not nodes[topNode]['class'] in nonMemberClasses and not topNode in nodesToExclude:
                 if normalizeDegree:
                     degrees.append(topDegrees[topNode]/float(normalizationValues[topNode]))
                 else:
@@ -926,7 +927,7 @@ def createDegreeIndexHeatmap(bnet,cfg):
         degreeNormalizationKey: str, the name of the node attribute containing the degree normalization values
         separateClasses: bln, if True, the heatmap is plotted separately for
                          for each membership class (node attribute 'class') (default: False)
-        nonMemberClass: str,  the membership class (class attribute) of those nodes that should not be included
+        nonMemberClasses: list of strs,  the membership classes (class attributes) of those nodes that should not be included
                         in the heatmap. Non-member companies or instances don't report, which gives them the performance
                         index of 0. (default: '')
         classes: list of strs, the possible membership classes
@@ -945,7 +946,7 @@ def createDegreeIndexHeatmap(bnet,cfg):
     indexChangeKey = cfg.get('indexChangeKey','index change')
     normalizeDegree = cfg.get('normalizeDegreeInScatter',False)
     separateClasses = cfg.get('separateClasses',False)
-    nonMemberClass = cfg.get('nonMemberClass','')
+    nonMemberClasses = cfg.get('nonMemberClasses','')
     nodesToExclude = cfg.get('nodesToExcludeFromScatter',[])
     maskKey = cfg.get('maskKey','')
     nDegreeBins = cfg.get('nTopDegreeBins',20)
@@ -970,7 +971,8 @@ def createDegreeIndexHeatmap(bnet,cfg):
         
     if separateClasses:
         classes = list(cfg['classes'])
-        classes.remove(nonMemberClass)
+        for nonMemberClass in nonMemberClasses:
+            classes.remove(nonMemberClass)
         
         for i, mclass in enumerate(classes):
             classDegrees = []
@@ -1004,7 +1006,7 @@ def createDegreeIndexHeatmap(bnet,cfg):
         sortedIndexChanges = []
         
         for topNode in top:
-            if not nodes[topNode]['class'] == nonMemberClass and not topNode in nodesToExclude and mask[topNode]>0:
+            if not nodes[topNode]['class'] in nonMemberClasses and not topNode in nodesToExclude and mask[topNode]>0:
                 if normalizeDegree:
                     degrees.append(topDegrees[topNode]/float(normalizationValues[topNode]))
                 else:
@@ -1028,7 +1030,7 @@ def createDegreeIndexHeatmap(bnet,cfg):
     
     plt.close()
             
-def getFieldwiseMeanDegrees(bnet,ignoreNonMembers=False,nonMemberClass=''):
+def getFieldwiseMeanDegrees(bnet,ignoreNonMembers=False,nonMemberClasses=[]):
     """
     Calculates the mean degree of top nodes (companies) belonging to different
     fields of business.
@@ -1037,7 +1039,7 @@ def getFieldwiseMeanDegrees(bnet,ignoreNonMembers=False,nonMemberClass=''):
     -----------
     bnet: networkx.Graph(), a bipartite network
     ignoreNonMembers: bln, should nodes belonging to the non-member class be excluded (default = False)
-    nonMemberClass: str, the class attribute of non-member nodes in bnet (default = '')
+    nonMemberClasses: lisst of strs, the class attributes of non-member nodes in bnet (default = [])
     
     Returns:
     --------
@@ -1047,7 +1049,7 @@ def getFieldwiseMeanDegrees(bnet,ignoreNonMembers=False,nonMemberClass=''):
     fieldDegrees = {}
     for node in top:
         if ignoreNonMembers:
-            if bnet.nodes(data=True)[node]['class'] == nonMemberClass:
+            if bnet.nodes(data=True)[node]['class'] in nonMemberClasses:
                 continue
         field = bnet.nodes(data=True)[node]['tag']
         if not field in fieldDegrees.keys():
@@ -1171,7 +1173,7 @@ def getCliqueIndices(bnet, cliques):
     
     return cliqueInfo
     
-def pruneStars(bnet, cliques, cliqueInfo, ignoreNonMembers=False, nonMemberClass='NM'):
+def pruneStars(bnet, cliques, cliqueInfo, ignoreNonMembers=False, nonMemberClasses=['NM']):
     """
     Removes from bistars all top nodes (companies) that participate in any other
     cliques besides the bistar. Bistar is a clique where one bottom node (event)
@@ -1196,8 +1198,8 @@ def pruneStars(bnet, cliques, cliqueInfo, ignoreNonMembers=False, nonMemberClass
                                     'isStar': does the clique consist of node bottom node (event) connecting multiple top nodes)
     ignoreNonMembers: bl
         should the non-member nodes be removed from cliques?
-    nonMemberClass: str
-        the membership class (class attribute) of those nodes that should be
+    nonMemberClasses: list of strs
+        the membership classs (class attributes) of those nodes that should be
         removed from stars. Non-member companies or instances often
         participate only one event and therefore artificially increase starness.
     
@@ -1217,7 +1219,7 @@ def pruneStars(bnet, cliques, cliqueInfo, ignoreNonMembers=False, nonMemberClass
         if info['isStar'] == True:
             topToRemove = []
             for top in info['topNodes']:
-                if ignoreNonMembers and bnet.nodes(data=True)[top]['class'] == nonMemberClass: # random networks don't have the class tag
+                if ignoreNonMembers and bnet.nodes(data=True)[top]['class'] in nonMemberClasses: # random networks don't have the class tag
                     topToRemove.append(top)
                 elif nx.degree(bnet,top) > 1:
                     topToRemove.append(top)
@@ -1419,7 +1421,7 @@ def getCliqueFieldDiversityWrapper(bnet,cliqueInfo):
     
 # Null models
     
-def createRandomBipartite(bnet, ignoreNonMembers=False, nonMemberClass=''):
+def createRandomBipartite(bnet, ignoreNonMembers=False, nonMemberClasses=[]):
     """
     Creates a randomly wired bipartite network with the same number of top and
     bottom nodes, the same density, and the same distribution of fields of
@@ -1432,7 +1434,7 @@ def createRandomBipartite(bnet, ignoreNonMembers=False, nonMemberClass=''):
                       non-member nodes will be ignored (if so, the number of non-member
                       nodes in the original network is taken into account when defining
                       the number of top nodes and density of the random network)
-    nonMemberClass: str, the class attribute of non-member nodes in bnet
+    nonMemberClasses: list of strs, the class attributes of non-member nodes in bnet
     
     Returns:
     --------
@@ -1440,7 +1442,7 @@ def createRandomBipartite(bnet, ignoreNonMembers=False, nonMemberClass=''):
     """
     top, bottom = getTopAndBottom(bnet) 
     if ignoreNonMembers:
-        nonMembers = getNonMembers(bnet,nonMemberClass)
+        nonMembers = getNonMembers(bnet,nonMemberClasses)
         nTop = len(top) - len(nonMembers)
         nEdges = 0
         for edge in bnet.edges():
@@ -1511,7 +1513,7 @@ def compareAgainstRandom(bnet,cfg,measures):
                nRandomBins: int, number of bins for obtaining the random distribution
                nRichnessBins: int, number of bins for obtaining distributions of richness
                ignoreNonMembers: bln, should non-member nodes be ignered in starness analysis?
-               nonMemberClass: str, class tag of the non-member nodes
+               nonMemberClasses: list of strs, class tags (values of the class atribute) of the non-member nodes
                randomColor: str, color for visualizing the values obtained from random networks
                dataColor: str, color for visualizing the actual values
                randomMarker: str, marker for the values obtained from random networks
@@ -1543,7 +1545,7 @@ def compareAgainstRandom(bnet,cfg,measures):
     nIters = cfg['nRandomIterations']
     ignoreNonMembers = cfg['ignoreNonMembers']
     if ignoreNonMembers:
-        nonMemberClass = cfg.get('nonMemberClass','')
+        nonMemberClasses = cfg.get('nonMemberClasses',[])
     randColor = cfg['randomColor']
     dataColor = cfg['dataColor']
     randMarker = cfg['randomMarker']
@@ -1561,7 +1563,7 @@ def compareAgainstRandom(bnet,cfg,measures):
         randStarness = []
         randFieldMeanDegrees = {}
         for i in range(nIters):
-            randNet = createRandomBipartite(bnet,ignoreNonMembers,nonMemberClass)
+            randNet = createRandomBipartite(bnet,ignoreNonMembers,nonMemberClasses)
             randNet,_ = pruneBipartite(randNet)
             cliques, cliqueInfo = findBicliques(randNet)
             cliques, cliqueInfo = pruneStars(randNet,cliques,cliqueInfo,ignoreNonMembers=False)
@@ -1573,7 +1575,7 @@ def compareAgainstRandom(bnet,cfg,measures):
                 else:
                     randFieldMeanDegrees[field] += fieldMeanDegrees[field]
         randFieldMeanDegrees = {field: randFieldMeanDegrees[field]/nIters for field in randFieldMeanDegrees}
-        trueFieldMeanDegrees = getFieldwiseMeanDegrees(bnet,ignoreNonMembers=True,nonMemberClass=nonMemberClass)
+        trueFieldMeanDegrees = getFieldwiseMeanDegrees(bnet,ignoreNonMembers=True,nonMemberClasses=nonMemberClasses)
         t,p = ttest_1samp(randStarness,starness)
         randLabel = 'Starness of random networks, mean: ' + str(np.mean(randStarness))
         dataLabel = 'True starness: ' + str(starness)
@@ -1604,7 +1606,7 @@ def compareAgainstRandom(bnet,cfg,measures):
         classY = [0.5,-0.5]
         classValues = np.array([(randFieldMeanDegrees[field],trueFieldMeanDegrees[field]) for field in fields]).T
         for x, center, label, color in zip(classValues, classY, ['random', 'data'], [randColor,dataColor]):
-            ax.barh(y+center*width,x+1,color=color,height=width,label=label)
+            ax.barh(y+center*width,x,color=color,height=width,label=label)
         ax.set_yticks(y)
         ax.set_yticklabels(fields)
         ax.legend()
@@ -1804,8 +1806,8 @@ def drawNetwork(bnet, cfg):
             the possible membership classes
         skipNonMembersInVisualization: bln 
             if True, non-member nodes are not visualized
-        nonMemberClass: str
-            the membership class (class attribute) of non-members
+        nonMemberClasses: list of strs
+            the membership classes (class attributes) of non-members
         networkColors: matplotlib.cmap
             colors associated with different fields of business
         bottomNetworkColor: str
@@ -1849,16 +1851,17 @@ def drawNetwork(bnet, cfg):
     top, bottom = getTopAndBottom(bnet)
     
     if ignoreNonMembers:
-        nonMemberClass = cfg['nonMemberClass']
+        nonMemberClasses = cfg['nonMemberClasses']
         cnet = bnet.copy() # calculating the spring layout based on member nodes only
         for topn in top:
-            if cnet.nodes(data=True)[topn]['class'] == nonMemberClass:
+            if cnet.nodes(data=True)[topn]['class'] in nonMemberClasses:
                 cnet.remove_node(topn)
         pos = nx.spring_layout(cnet)
         classes = list(classes)
         nodeShapes = list(nodeShapes)
-        nodeShapes.pop(classes.index(nonMemberClass))
-        classes.remove(nonMemberClass)
+        for nonMemberClass in nonMemberClasses:
+            nodeShapes.pop(classes.index(nonMemberClass))
+            classes.remove(nonMemberClass)
     else:
         pos = nx.spring_layout(bnet)
     
@@ -1882,9 +1885,9 @@ def drawNetwork(bnet, cfg):
         sortedEdges = list(bnet.edges())
         if ignoreNonMembers:
             for edge in bnet.edges():
-                if bnet.nodes(data=True)[edge[0]].get('class') == nonMemberClass:
+                if bnet.nodes(data=True)[edge[0]].get('class') in nonMemberClasses:
                     sortedEdges.remove(edge)
-                elif bnet.nodes(data=True)[edge[1]].get('class') == nonMemberClass:
+                elif bnet.nodes(data=True)[edge[1]].get('class') in nonMemberClasses:
                     sortedEdges.remove(edge)
         weights = [bnet[edge[0]][edge[1]]['weight'] for edge in sortedEdges]
         nx.draw_networkx_edges(bnet, pos=pos, edgelist=sortedEdges, width=weights, alpha=edgeAlpha)
@@ -1892,8 +1895,8 @@ def drawNetwork(bnet, cfg):
         edges = list(bnet.edges())
         if ignoreNonMembers:
             for edge in bnet.edges():
-                if bnet.nodes(data=True)[edge[0]].get('class') == nonMemberClass \
-                or bnet.nodes(data=True)[edge[1]].get('class') == nonMemberClass:
+                if bnet.nodes(data=True)[edge[0]].get('class') in nonMemberClasses \
+                or bnet.nodes(data=True)[edge[1]].get('class') in nonMemberClasses:
                     edges.remove(edge)
         nx.draw_networkx_edges(bnet,pos,edgelist=edges,width=edgeWidth,alpha=edgeAlpha)
         
@@ -2184,7 +2187,7 @@ def getJaccardIndex(a,b):
     J = len(a.intersection(b))/float(len(a.union(b)))
     return J
 
-def getNonMembers(bnet, nonMemberClass):
+def getNonMembers(bnet, nonMemberClasses):
     """
     Gives a list of the non-member top nodes in the network.
     
@@ -2192,8 +2195,8 @@ def getNonMembers(bnet, nonMemberClass):
     -----------
     bnet: nx.bipartite
         a bipartite network
-    nonMemberClass: str
-        the value of the 'class' tag indicating the non-member nodes
+    nonMemberClasses: list of strs
+        the values of the 'class' tag indicating the non-member nodes
         
     Returns:
     --------
@@ -2203,7 +2206,7 @@ def getNonMembers(bnet, nonMemberClass):
     topNodes, _ = getTopAndBottom(bnet)
     nonMembers = []
     for top in topNodes:
-        if bnet.nodes(data=True)[top]['class'] == nonMemberClass:
+        if bnet.nodes(data=True)[top]['class'] in nonMemberClasses:
             nonMembers.append(top)
     return nonMembers
     

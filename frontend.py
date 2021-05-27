@@ -42,7 +42,7 @@ if numbersOnly:
     cfg['csvSeparator'] = pms.csvSeparator
     
     cfg['ignoreNonMembers'] = pms.ignoreNonMembers
-    cfg['nonMemberClass'] = pms.nonMemberClass
+    cfg['nonMemberClasses'] = pms.nonMemberClasses
     nodesToExcludeFromDegrees = pms.nodesToExcludeFromDegrees
     
     cfg['topColor'] = pms.topColor
@@ -80,7 +80,8 @@ if numbersOnly:
         nclasses = [bnet.nodes(data=True)[node]['class'] for node in tlist]
         degrees = [bnet.degree(node) for node in tlist]
         mclasses = list(cfg['classes'])
-        mclasses.remove(cfg['nonMemberClass'])
+        for nonMemberClass in cfg['nonMemberClasses']:
+            mclasses.remove(nonMemberClass)
         for mclass in mclasses:
             partCount = 0
             nonpartCount = 0
@@ -93,15 +94,16 @@ if numbersOnly:
             print 'In year(s) ' + year + ', in class ' + mclass + ' ' + str(partCount) + ' participants, ' + str(nonpartCount) + ' non-participants'
         partCount = 0
         for nyear,nclass,degree in zip(nyears,nclasses,degrees):
-            if nclass == cfg['nonMemberClass'] and degree > 0:
+            if nclass in cfg['nonMemberClasses'] and degree > 0:
                 partCount += 1
-        print 'In year(s) ' + year + ', in class ' + cfg['nonMemberClass'] + ' ' + str(partCount) + ' participants'
+        nonMemberStr = ', '.join(cfg['nonMemberClasses'])
+        print 'In year(s) ' + year + ', in classes ' + nonMemberStr + ' ' + str(partCount) + ' participants'
                 
         degreeDict = functions.getDegreeNodeDictionary(bnet,cfg)
         bnet, nZeroDegree = functions.pruneBipartite(bnet)
         
         density = functions.getDensity(bnet)
-        densityWithoutNonMembers = functions.getDensity(bnet,excludeNonMembers=True,nonMemberClass=cfg['nonMemberClass'])
+        densityWithoutNonMembers = functions.getDensity(bnet,excludeNonMembers=True,nonMemberClasses=cfg['nonMemberClasses'])
         print 'Density in year(s) ' + year + ': ' + str(density) + ', ' + str(densityWithoutNonMembers) + ' excluding non-members'
         densities.append(density)
      
@@ -120,7 +122,7 @@ if numbersOnly:
         print 'In year(s) ' + year + ', on average ' + str(np.mean(bottomDegrees)) + ' participants per event, min ' + str(min(bottomDegrees)) + ', max ' + str(max(bottomDegrees))
         
         for node in ctop:
-            if cnet.nodes(data=True)[node]['class'] == cfg['nonMemberClass']: # now, removing all non-member nodes (that often participate only one event, thus artificially lowering mean events/participant)
+            if cnet.nodes(data=True)[node]['class'] in cfg['nonMemberClasses']: # now, removing all non-member nodes (that often participate only one event, thus artificially lowering mean events/participant)
                 cnet.remove_node(node)
         
         ctop,_ = functions.getTopAndBottom(cnet)
@@ -168,7 +170,7 @@ else:
     cfg['nodesToExcludeFromScatter'] = pms.nodesToExcludeFromScatter
     
     cfg['ignoreNonMembers'] = pms.ignoreNonMembers
-    cfg['nonMemberClass'] = pms.nonMemberClass
+    cfg['nonMemberClasses'] = pms.nonMemberClasses
     
     cfg['nTopDegreeBins'] = pms.nTopDegreeBins
     cfg['nBottomDegreeBins'] = pms.nBottomDegreeBins
@@ -248,6 +250,7 @@ else:
         cfg['fieldHistogramSaveName'] = pms.fieldHistogramSaveName + '_' + year + '.pdf'
         
         cfg['skipNonMembersInVisualization'] = False
+        cfg['nonMemberClasses'] = pms.nonMemberClasses
         
         bnet = functions.createBipartite(cfg)
         functions.getDegreeHistogram(bnet, cfg)
@@ -279,8 +282,9 @@ else:
         
         functions.compareAgainstRandom(bnet,cfg,measures)
         
+        cfg['nonMemberClasses'] = pms.nonMemberClassesForStarness
         # for analyzing starness, let's remove from stars the nodes that participate also in other cliques
-        cliques, cliqueInfo = functions.pruneStars(bnet,cliques,cliqueInfo,ignoreNonMembers=cfg['ignoreNonMembers'],nonMemberClass=cfg['nonMemberClass'])
+        cliques, cliqueInfo = functions.pruneStars(bnet,cliques,cliqueInfo,ignoreNonMembers=cfg['ignoreNonMembers'],nonMemberClasses=cfg['nonMemberClasses'])
         functions.visualizeBicliques(bnet,cliqueInfo,cfg)
     #    #functions.createCliqueIndexHeatmap(cliqueInfo, cfg)
         starness = functions.getStarness(bnet,cliqueInfo)
