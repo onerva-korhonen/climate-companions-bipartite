@@ -142,7 +142,8 @@ relativeDivYLims = (0,0.18)
 # visualization
 tags = ['C','CM','Co','E','I','II','LT','S','SD','RE','NGO','PS','AG','FPS','OC','HKI_1','HKI_2']
 membershipClasses = ['BM','OM','NM','HKI']
-nonMemberClass = 'NM'
+nonMemberClasses = ['NM']
+nonMemberClassesForStarness = ['NM','HKI']
 nodesToExcludeFromScatter = ['OM_PS3','HKI_1','HKI_2']
 # This is for excluding some outlier nodes from the degree - index scatter (OM_PS3 is an error and HKI_1 and HKI_2 instances of the city of Helsinki)
 nodesToExcludeFromDegrees = ['HKI_1','HKI_2'] 
