@@ -467,8 +467,6 @@ def getDegreeHistogram(bnet, cfg):
         histWidth = cfg['histWidth']
     else:
         histWidth = None
-        
-    #import pdb; pdb.set_trace()
     
     top, bottom = getTopAndBottom(bnet)
     topDegrees = dict(nx.degree(bnet,top)) # degrees returns a DegreeView so this is required for accessing values
@@ -879,7 +877,6 @@ def createDegreeIndexScatter(bnet, cfg):
                     nodeColors.append(nodes[topNode]['nodeColor'])
             nodeColors = np.array(nodeColors)        
             corr, p = pearsonr(classDegrees, classIndices) # this is scipy.stats.pearsonr
-            #plt.plot(classDegrees,classIndices,color=classColor,linestyle='',marker=classMarker,alpha=alpha,label=mclass+' pearson r: '+str(corr)+', p: '+str(p))        
             plt.scatter(classDegrees,classIndices,c=nodeColors,marker=classMarker,alpha=alpha,label=mclass+' pearson r: '+str(corr)+', p: '+str(p))
     else:
         #topColor = cfg['topColor']
@@ -1196,7 +1193,7 @@ def pruneStars(bnet, cliques, cliqueInfo, ignoreNonMembers=False, nonMemberClass
                                     'bottomIndex': number of bottom nodes of the clique,
                                     'isBridge': does the clique consist of one top node (company) connecting multiple bottom nodes,
                                     'isStar': does the clique consist of node bottom node (event) connecting multiple top nodes)
-    ignoreNonMembers: bl
+    ignoreNonMembers: bln
         should the non-member nodes be removed from cliques?
     nonMemberClasses: list of strs
         the membership classs (class attributes) of those nodes that should be
@@ -1306,7 +1303,7 @@ def createCliqueIndexHeatmap(cliqueInfo, cfg):
     
     plt.close()
         
-def getStarness(bnet,cliqueInfo):
+def getStarness(bnet,cliqueInfo,ignoreNonMembers=False,nonMemberClasses=[]):
     """
     Calculates the starness of a bipartite graph. Starness is defined as the 
     fraction of top nodes (companies) belonging to bistars out of all top nodes
@@ -1322,6 +1319,8 @@ def getStarness(bnet,cliqueInfo):
                                     'bottomIndex': number of bottom nodes of the clique,
                                     'isBridge': does the clique consist of one top node (company) connecting multiple bottom nodes,
                                     'isStar': does the clique consist of node bottom node (event) connecting multiple top nodes)
+    ignoreNonMembers: bln, should the non-member nodes be excluded when calculating starness
+    nonMemberClasses: list of strs, the class attributes of non-member nodes in bnet
     
     Returns:
     --------
@@ -1329,10 +1328,17 @@ def getStarness(bnet,cliqueInfo):
     """
     nStarNodes = 0
     top, _ = getTopAndBottom(bnet) 
-    nTotal = len(top)
+    if ignoreNonMembers:
+        nonMembers = set(getNonMembers(bnet,nonMemberClasses))
+        nTotal = len(top) - len(nonMembers)
+    else:
+        nTotal = len(top)
     for clique in cliqueInfo:
         if clique['isStar']:
-            nStarNodes = nStarNodes + clique['topIndex']
+            if ignoreNonMembers:
+                nStarNodes += len(set(clique['topNodes']).difference(nonMembers)) 
+            else:
+                nStarNodes += clique['topIndex']
     starness = nStarNodes/float(nTotal)
     return starness
     
@@ -1562,20 +1568,21 @@ def compareAgainstRandom(bnet,cfg,measures):
         starness = measures['starness']
         randStarness = []
         randFieldMeanDegrees = {}
+        randTopDegrees = []
         for i in range(nIters):
             randNet = createRandomBipartite(bnet,ignoreNonMembers,nonMemberClasses)
             randNet,_ = pruneBipartite(randNet)
             cliques, cliqueInfo = findBicliques(randNet)
             cliques, cliqueInfo = pruneStars(randNet,cliques,cliqueInfo,ignoreNonMembers=False)
-            randStarness.append(getStarness(bnet,cliqueInfo))
+            randStarness.append(getStarness(randNet,cliqueInfo)) 
+            top,_ = getTopAndBottom(randNet)
+            randTopDegrees.extend(dict(nx.degree(randNet,top)).values())
             fieldMeanDegrees = getFieldwiseMeanDegrees(randNet)
             for field in fieldMeanDegrees:
                 if not field in randFieldMeanDegrees:
                     randFieldMeanDegrees[field] = fieldMeanDegrees[field]
                 else:
                     randFieldMeanDegrees[field] += fieldMeanDegrees[field]
-        randFieldMeanDegrees = {field: randFieldMeanDegrees[field]/nIters for field in randFieldMeanDegrees}
-        trueFieldMeanDegrees = getFieldwiseMeanDegrees(bnet,ignoreNonMembers=True,nonMemberClasses=nonMemberClasses)
         t,p = ttest_1samp(randStarness,starness)
         randLabel = 'Starness of random networks, mean: ' + str(np.mean(randStarness))
         dataLabel = 'True starness: ' + str(starness)
@@ -1597,9 +1604,31 @@ def compareAgainstRandom(bnet,cfg,measures):
         plt.savefig(savePath,format='pdf',bbox_inches='tight')
         plt.close()
         
+        randXValues, randCDF = getCDF(randTopDegrees)
+        top,_ = getTopAndBottom(bnet)
+        if ignoreNonMembers:
+            nonMembers = set(getNonMembers(bnet,nonMemberClasses))
+            top = top.difference(nonMembers)
+        realTopDegrees = dict(nx.degree(bnet,top)).values()            
+        realXValues, realCDF = getCDF(realTopDegrees)
+        
         plt.figure()
         ax = plt.subplot(111)
+        plt.plot(randXValues,randCDF,color=randColor,alpha=randAlpha,label='random')
+        plt.plot(realXValues,realCDF,color=dataColor,label='data')
+        ax.set_xlabel('Degree')
+        ax.set_ylabel('CDF')
+        ax.legend()
+        plt.tight_layout()
+        savePath = savePathBase + saveNameBase + '_cdf.pdf'
+        plt.savefig(savePath,format='pdf',bbox_inches='tight')
+        plt.close()
         
+        randFieldMeanDegrees = {field: randFieldMeanDegrees[field]/nIters for field in randFieldMeanDegrees}
+        trueFieldMeanDegrees = getFieldwiseMeanDegrees(bnet,ignoreNonMembers=True,nonMemberClasses=nonMemberClasses)
+        
+        plt.figure()
+        ax = plt.subplot(111)
         width = cfg['fieldHistWidth']
         fields = trueFieldMeanDegrees.keys()
         y = np.arange(len(fields))
@@ -2153,6 +2182,27 @@ def getDistribution(data, nBins):
     binCenters = 0.5*(binEdges[:-1]+binEdges[1:])
     
     return pdf, binCenters
+
+def getCDF(data):
+    """
+    Creates the CDF of the given data, that is, for each value in data, the
+    fraction of values smaller than it.
+    
+    Parameters:
+    -----------
+    data: a container of data points, e.g. a list or np.array
+    
+    Returns:
+    --------
+    xvalues: np.array, the unique values of data (the x axis for plotting cdf)
+    cdf: np.array, cdf of the data
+    """
+    xvalues = np.sort(np.unique(data))
+    cdf = np.zeros(len(xvalues))
+    for i, value in enumerate(xvalues):
+        cdf[i] = sum(data <= value)
+    cdf = cdf/float(len(data))
+    return xvalues, cdf
 
 def getTopAndBottom(bnet):
     """

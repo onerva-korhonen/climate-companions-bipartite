@@ -287,7 +287,7 @@ else:
         cliques, cliqueInfo = functions.pruneStars(bnet,cliques,cliqueInfo,ignoreNonMembers=cfg['ignoreNonMembers'],nonMemberClasses=cfg['nonMemberClasses'])
         functions.visualizeBicliques(bnet,cliqueInfo,cfg)
     #    #functions.createCliqueIndexHeatmap(cliqueInfo, cfg)
-        starness = functions.getStarness(bnet,cliqueInfo)
+        starness = functions.getStarness(bnet,cliqueInfo,ignoreNonMembers=cfg['ignoreNonMembers'],nonMemberClasses=cfg['nonMemberClasses'])
         print 'Starness: ' + str(starness)
         starnesses.append(starness)
         
