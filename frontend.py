@@ -224,6 +224,10 @@ else:
     cfg['relativeDivYLims'] = pms.relativeDivYLims
     cfg['richnessLineStyle'] = pms.richnessLineStyle
     cfg['diversityLineStyle'] = pms.diversityLineStyle
+    cfg['indexPercentile'] = pms.indexPercentile
+    cfg['indexPercentileLineStyle'] = pms.indexPercentileLineStyle
+    cfg['indexPercentileColor'] = pms.indexPercentileColor
+    cfg['indexPercentileAlpha'] = pms.indexPercentileAlpha
     
     cfg['savePathBase'] = pms.savePathBase
     cfg['degreeIndexScatterSaveName'] = pms.degreeIndexScatterSaveName + '_all_degree_normalized.pdf'

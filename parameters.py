@@ -111,7 +111,7 @@ joiningYearKey = 'Joined on:'
 csvSeparator = ';'
 
 # distributions and binning
-nTopDegreeBins = 20
+nTopDegreeBins = 10
 nBottomDegreeBins = 20
 cliqueHeatmapBottomBins = np.arange(0.5,16.5,1)
 cliqueHeatmapTopBins = np.arange(0.5,68.5,1)
@@ -197,6 +197,11 @@ fieldHistWidth = 0.2
 
 richnessLineStyle = '-'
 diversityLineStyle = '--'
+
+indexPercentile = 0.5
+indexPercentileLineStyle = '--'
+indexPercentileColor = 'k'
+indexPercentileAlpha = 0.5
 
 
 # save paths

@@ -826,6 +826,10 @@ def createDegreeIndexScatter(bnet, cfg):
                       node classes if separateClasses == True
         scatterMarker: str, marker style used if separateClasses == False (default: '*')
         markerAlpha: float, alpha (transparency) value used to create the scatter (default: 0.5)
+        indexPercentile: float, value to which draw a line showing a selected index value (default: None)
+        indexPercentileLineStyle: str, line style for drawing the index percentile line (default: '--')
+        indexPercentileColor: str, color for drawing the index percentile line (default: 'k')
+        indexPercentileAlpha float, alpha (transparency) value for drawing the index percentile line (default: 0.5)
         savePathBase: str, a base path (e.g. to a shared folder) for saving figures
         degreeIndexScatterSaveName: str, path for saving the scatter
         
@@ -840,6 +844,11 @@ def createDegreeIndexScatter(bnet, cfg):
     nodesToExclude = cfg.get('nodesToExcludeFromScatter',[])
     marker = cfg.get('scatterMarker','*')
     alpha = cfg.get('markerAlpha',0.5)
+    indexPercentile = cfg.get('indexPercentile',None)
+    if indexPercentile:
+        indexPercentileLineStyle = cfg.get('indexPercentileLineStyle','--')
+        indexPercentileColor = cfg.get('indexPercentileColor','k')
+        indexPercentileAlpha = cfg.get('indexPercentileAlpha',0.5)
     savePath = cfg['savePathBase'] + cfg['degreeIndexScatterSaveName']
     
     top, _ = getTopAndBottom(bnet)
@@ -863,6 +872,9 @@ def createDegreeIndexScatter(bnet, cfg):
         fig = plt.figure()
         ax = fig.add_subplot(111)
         
+        maxDegree = 0
+        minDegree = np.inf
+        
         for mclass, classColor, classMarker in zip(classes, classColors, classMarkers):
             classDegrees = []
             classIndices = []
@@ -875,11 +887,16 @@ def createDegreeIndexScatter(bnet, cfg):
                         classDegrees.append(topDegrees[topNode])
                     classIndices.append(indices[topNode])
                     nodeColors.append(nodes[topNode]['nodeColor'])
+            if len(classDegrees) > 0:
+                if max(classDegrees) > maxDegree:
+                    maxDegree = max(classDegrees)
+                if min(classDegrees) < minDegree:
+                    minDegree = min(classDegrees)
             nodeColors = np.array(nodeColors)        
             corr, p = pearsonr(classDegrees, classIndices) # this is scipy.stats.pearsonr
             plt.scatter(classDegrees,classIndices,c=nodeColors,marker=classMarker,alpha=alpha,label=mclass+' pearson r: '+str(corr)+', p: '+str(p))
+            
     else:
-        #topColor = cfg['topColor']
         degrees = []
         sortedIndices = []
         nodeColors = []
@@ -892,13 +909,19 @@ def createDegreeIndexScatter(bnet, cfg):
                     degrees.append(topDegrees[topNode])
                 sortedIndices.append(indices[topNode])
                 nodeColors.append(nodes[topNode]['nodeColor'])
+                
+        minDegree = min(degrees)       
+        maxDegree = max(degrees)
         
         corr, p = pearsonr(degrees,sortedIndices) # this is scipy.stats.pearsonr
         
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        #plt.plot(degrees,sortedIndices,color=topColor,linestyle='',marker=marker,alpha=alpha,label='pearson r: '+str(corr)+', p: '+str(p))
         plt.scatter(degrees,sortedIndices,c=nodeColors,marker=marker,alpha=alpha,label='pearson r: '+str(corr)+', p: '+str(p))
+        
+    if indexPercentile:
+        plt.plot([minDegree,maxDegree],[indexPercentile,indexPercentile],ls=indexPercentileLineStyle,color=indexPercentileColor,alpha=indexPercentileAlpha)
+        
     ax.set_xlabel('Degree')
     ax.set_ylabel('Performance index')
     ax.legend()
@@ -1518,6 +1541,7 @@ def compareAgainstRandom(bnet,cfg,measures):
                nRandomIterations: int, number of null model instances to be used
                nRandomBins: int, number of bins for obtaining the random distribution
                nRichnessBins: int, number of bins for obtaining distributions of richness
+               nTopDegreeBins: int, number of bins for obtaining top degree distribution of the random networks
                ignoreNonMembers: bln, should non-member nodes be ignered in starness analysis?
                nonMemberClasses: list of strs, class tags (values of the class atribute) of the non-member nodes
                randomColor: str, color for visualizing the values obtained from random networks
@@ -1527,7 +1551,6 @@ def compareAgainstRandom(bnet,cfg,measures):
                dataLineWidth: double, width of the lines presenting data (increased from default to increase data-random contrast)
                randomAlpha: double, transparency value for the data points from random networks
                identityLineStyle: str, line style for plotting the identity line
-               nRandomBins: int, number of bins for obtaining the random distribution
                starnessXLims: tuple of two floats, x axis limits for the starness figure (for autoscaling, leave unset)
                starnessYLims: tuple of two floats, y axis limits for the starness figure (for autoscaling, leave unset)
                richnessXLims: tuple of two floats, x axis limits for the richness/effective diversity figure (for autoscaling, leave unset)
@@ -1566,6 +1589,7 @@ def compareAgainstRandom(bnet,cfg,measures):
     
     if 'starness' in measures.keys():
         starness = measures['starness']
+        nDegreeBins = cfg['nTopDegreeBins']
         randStarness = []
         randFieldMeanDegrees = {}
         randTopDegrees = []
@@ -1612,15 +1636,34 @@ def compareAgainstRandom(bnet,cfg,measures):
         realTopDegrees = dict(nx.degree(bnet,top)).values()            
         realXValues, realCDF = getCDF(realTopDegrees)
         
+        interpXValues = np.unique(np.concatenate([randXValues,realXValues]))
+        interpRandCDF = np.interp(interpXValues,randXValues,randCDF)
+        interpRealCDF = np.interp(interpXValues,realXValues,realCDF)
+        CDFDiff = interpRealCDF - interpRandCDF
+        
         plt.figure()
         ax = plt.subplot(111)
         plt.plot(randXValues,randCDF,color=randColor,alpha=randAlpha,label='random')
         plt.plot(realXValues,realCDF,color=dataColor,label='data')
+        plt.plot(interpXValues,CDFDiff,color=randColor,ls='--',alpha=randAlpha,label='data-random')
         ax.set_xlabel('Degree')
         ax.set_ylabel('CDF')
         ax.legend()
         plt.tight_layout()
         savePath = savePathBase + saveNameBase + '_cdf.pdf'
+        plt.savefig(savePath,format='pdf',bbox_inches='tight')
+        plt.close()
+        
+        randDegreeDist, randDegreeBins = getDistribution(randTopDegrees,nDegreeBins)
+        
+        plt.figure()
+        ax = plt.subplot(111)
+        plt.plot(randDegreeBins,randDegreeDist,color=randColor,alpha=randAlpha,label='random')
+        ax.set_xlabel('Degree')
+        ax.set_ylabel('PDF')
+        ax.legend()
+        plt.tight_layout()
+        savePath = savePathBase + saveNameBase + '_random_degree_pdf.pdf'
         plt.savefig(savePath,format='pdf',bbox_inches='tight')
         plt.close()
         
