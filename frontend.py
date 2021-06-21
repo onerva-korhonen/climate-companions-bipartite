@@ -60,7 +60,7 @@ if numbersOnly:
         cfg['degreeHistogramSaveName'] = pms.degreeHistogramSaveName + '_' + year + '.pdf'
         cfg['degreeNodeDictionarySaveName'] = pms.degreeNodeDictionarySaveName + '_' + year + '.csv'
         cfg['networkSaveName'] = pms.networkSaveName + '_' + year + '.pdf'
-        cfg['cliquesSaveName'] = pms.cliqueSaveName + '_' + year
+        cfg['cliquesSaveName'] = pms.cliquesSaveName + '_' + year
         cfg['cliqueHeatmapSaveName'] = pms.cliqueHeatmapSaveName + '_' + year + '.pdf'
         cfg['diversitySaveName'] = pms.diversitySaveName + '_' + year + '.pdf' 
         cfg['comparisonVsRandomSaveName'] = pms.comparisonVsRandomSaveName + '_' + year
@@ -185,6 +185,7 @@ else:
     
     cfg['nRandomIterations'] = pms.nRandomIterations
     cfg['nRandomBins'] = pms.nRandomBins
+    cfg['fieldMeanDegreesSigLimit'] = pms.fieldMeanDegreesSigLimit
     
     cfg['topColor'] = pms.topColor
     cfg['bottomColor'] = pms.bottomColor
@@ -243,7 +244,7 @@ else:
         cfg['degreeSaveName'] = pms.degreeSaveName + '_' + year + '.pdf'
         cfg['degreeHistogramSaveName'] = pms.degreeHistogramSaveName + '_' + year + '.pdf'
         cfg['networkSaveName'] = pms.networkSaveName + '_' + year + '.pdf'
-        cfg['cliquesSaveName'] = pms.cliqueSaveName + '_' + year
+        cfg['cliquesSaveName'] = pms.cliquesSaveName + '_' + year
         cfg['cliqueHeatmapSaveName'] = pms.cliqueHeatmapSaveName + '_' + year + '.pdf'
         cfg['diversitySaveName'] = pms.diversitySaveName + '_' + year + '.pdf' 
         cfg['comparisonVsRandomSaveName'] = pms.comparisonVsRandomSaveName + year
@@ -252,6 +253,7 @@ else:
         cfg['diversityVsTopIndexSaveName'] = pms.diversityVsTopIndexSaveName + '_' + year + '.pdf'
         cfg['fieldHistogramClassesSaveName'] = pms.fieldHistogramClassesSaveName + '_' + year + '.pdf'
         cfg['fieldHistogramSaveName'] = pms.fieldHistogramSaveName + '_' + year + '.pdf'
+        sortedCliquesSaveName = pms.savePathBase + pms.sortedCliquesSaveName + '_' + year + '.txt'
         
         cfg['skipNonMembersInVisualization'] = False
         cfg['nonMemberClasses'] = pms.nonMemberClasses
@@ -272,6 +274,7 @@ else:
         functions.drawNetwork(bnet,cfg) # repeat network drawing without non-member nodes
         cliques, cliqueInfo = functions.findBicliques(bnet)
         nCliques.append(len(cliques))
+        functions.saveBicliques(cliqueInfo,sortedCliquesSaveName)
         richnesses, diversities, counts, majorFields = functions.getCliqueFieldDiversityWrapper(bnet,cliqueInfo)
         meanRichnesses.append(np.mean(np.array(richnesses)))
         meanDiversities.append(np.mean(np.array(diversities)))

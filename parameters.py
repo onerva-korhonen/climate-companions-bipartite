@@ -139,6 +139,8 @@ richnessYLims = (0,0.25)
 relativeDivXLims = (0.6,0.95)
 relativeDivYLims = (0,0.18)
 
+fieldMeanDegreesSigLimit = 0.01
+
 # visualization
 tags = ['C','CM','Co','E','I','II','LT','S','SD','RE','NGO','PS','AG','FPS','OC','HKI_1','HKI_2']
 membershipClasses = ['BM','OM','NM','HKI']
@@ -210,7 +212,7 @@ degreeSaveName = 'degree-distributions'
 degreeHistogramSaveName = '/degree_histograms'
 degreeNodeDictionarySaveName = 'companies-per-degree'
 networkSaveName = 'network'
-cliqueSaveName = 'network-cliques'
+cliquesSaveName = 'network-cliques'
 cliqueHeatmapSaveName = 'clique-heatmap'
 diversitySaveName = 'richness-vs-diversity'
 comparisonVsRandomSaveName = 'comparison-vs-random'
@@ -221,3 +223,4 @@ fieldHistogramClassesSaveName = 'field-histogram-classes'
 fieldHistogramSaveName = 'field_histogram'
 degreeIndexScatterSaveName = 'degree_index_scatter'
 degreeIndexHeatmapSaveName = 'degree_index_heatmap'
+sortedCliquesSaveName = 'cliques_sorted_by_events'

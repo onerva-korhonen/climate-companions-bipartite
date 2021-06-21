@@ -1192,6 +1192,39 @@ def getCliqueIndices(bnet, cliques):
         cliqueInfo.append(info)
     
     return cliqueInfo
+
+def saveBicliques(cliqueInfo, savePath):
+    """
+    Sorts the bicliques in the decreasing order of the bottom index (number of events)
+    in the biclique and saves the listing to a txt file.
+    
+    Parameters:
+    -----------
+    cliqueInfo: list of dicts; each dict contains one clique separated to top and
+                bottom nodes (keys: 'topNodes': top nodes (companies) of the clique, 
+                                    'bottomNodes' : bottom nodes (events) of the clique,
+                                    'topIndex': number of top nodes of the clique,
+                                    'bottomIndex': number of bottom nodes of the clique,
+                                    'isBridge': does the clique consist of one top node (company) connecting multiple bottom nodes,
+                                    'isStar': does the clique consist of node bottom node (event) connecting multiple top nodes)
+    savePath: str, path to which save the biclique listing
+    
+    Returns:
+    --------
+    No direct output, saves the biclique listing to the given path
+    """
+    topNodes = []
+    bottomIndices = []
+    for clique in cliqueInfo:
+        topNodes.append(clique['topNodes'])
+        bottomIndices.append(clique['bottomIndex'])
+    sortedCliques = [(bottomIndex, top) for bottomIndex, top in sorted(zip(bottomIndices,topNodes),key=lambda pair: pair[0],reverse=True)]
+    strs = []
+    for clique in sortedCliques:
+        strs.append('number of events: ' + str(clique[0]) + ', participants: ' + str(clique[1]) + '\n')
+    f = open(savePath,'w')
+    f.writelines(strs)
+    f.close()
     
 def pruneStars(bnet, cliques, cliqueInfo, ignoreNonMembers=False, nonMemberClasses=['NM']):
     """
@@ -1593,6 +1626,7 @@ def compareAgainstRandom(bnet,cfg,measures):
         randStarness = []
         randFieldMeanDegrees = {}
         randTopDegrees = []
+        
         for i in range(nIters):
             randNet = createRandomBipartite(bnet,ignoreNonMembers,nonMemberClasses)
             randNet,_ = pruneBipartite(randNet)
@@ -1604,9 +1638,9 @@ def compareAgainstRandom(bnet,cfg,measures):
             fieldMeanDegrees = getFieldwiseMeanDegrees(randNet)
             for field in fieldMeanDegrees:
                 if not field in randFieldMeanDegrees:
-                    randFieldMeanDegrees[field] = fieldMeanDegrees[field]
+                    randFieldMeanDegrees[field] = [fieldMeanDegrees[field]]
                 else:
-                    randFieldMeanDegrees[field] += fieldMeanDegrees[field]
+                    randFieldMeanDegrees[field].append(fieldMeanDegrees[field])
         t,p = ttest_1samp(randStarness,starness)
         randLabel = 'Starness of random networks, mean: ' + str(np.mean(randStarness))
         dataLabel = 'True starness: ' + str(starness)
@@ -1667,13 +1701,28 @@ def compareAgainstRandom(bnet,cfg,measures):
         plt.savefig(savePath,format='pdf',bbox_inches='tight')
         plt.close()
         
-        randFieldMeanDegrees = {field: randFieldMeanDegrees[field]/nIters for field in randFieldMeanDegrees}
         trueFieldMeanDegrees = getFieldwiseMeanDegrees(bnet,ignoreNonMembers=True,nonMemberClasses=nonMemberClasses)
+        fields = trueFieldMeanDegrees.keys()
+        sigLimit = cfg['fieldMeanDegreesSigLimit']/len(fields)
+        strs = []
+        
+        for field in fields:
+            t,p = ttest_1samp(randFieldMeanDegrees[field],trueFieldMeanDegrees[field])
+            if p < sigLimit:
+                strs.append('For field ' + field + ', t = ' + str(t) + ', p = ' + str(p) + ', considered significant at Bonferroni corrected level ' + str(sigLimit) + '\n')
+            else:
+                strs.append('For field ' + field + ', t = ' + str(t) + ', p = ' + str(p) + ', not considered significant at Bonferroni corrected level ' + str(sigLimit) + '\n')
+        
+        savePath = savePathBase + saveNameBase + '_fieldwise_mean_degree_significance.txt'
+        f = open(savePath,'w')
+        f.writelines(strs)
+        f.close()
+        
+        randFieldMeanDegrees = {field: sum(randFieldMeanDegrees[field])/nIters for field in randFieldMeanDegrees}
         
         plt.figure()
         ax = plt.subplot(111)
         width = cfg['fieldHistWidth']
-        fields = trueFieldMeanDegrees.keys()
         y = np.arange(len(fields))
         classY = [0.5,-0.5]
         classValues = np.array([(randFieldMeanDegrees[field],trueFieldMeanDegrees[field]) for field in fields]).T
