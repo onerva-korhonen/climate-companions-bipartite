@@ -1214,14 +1214,16 @@ def saveBicliques(cliqueInfo, savePath):
     No direct output, saves the biclique listing to the given path
     """
     topNodes = []
+    bottomNodes = []
     bottomIndices = []
     for clique in cliqueInfo:
         topNodes.append(clique['topNodes'])
+        bottomNodes.append(clique['bottomNodes'])
         bottomIndices.append(clique['bottomIndex'])
-    sortedCliques = [(bottomIndex, top) for bottomIndex, top in sorted(zip(bottomIndices,topNodes),key=lambda pair: pair[0],reverse=True)]
+    sortedCliques = [(bottomIndex, top, bottom) for bottomIndex, top, bottom in sorted(zip(bottomIndices,topNodes,bottomNodes),key=lambda pair: pair[0],reverse=True)]
     strs = []
     for clique in sortedCliques:
-        strs.append('number of events: ' + str(clique[0]) + ', participants: ' + str(clique[1]) + '\n')
+        strs.append('number of events: ' + str(clique[0]) + ', events: ' + str(clique[2]) + ', participants: ' + str(clique[1]) + '\n')
     f = open(savePath,'w')
     f.writelines(strs)
     f.close()
