@@ -1681,7 +1681,7 @@ def compareAgainstRandom(bnet,cfg,measures):
         ax = plt.subplot(111)
         plt.plot(randXValues,randCDF,color=randColor,alpha=randAlpha,label='random')
         plt.plot(realXValues,realCDF,color=dataColor,label='data')
-        plt.plot(interpXValues,CDFDiff,color=randColor,ls='--',alpha=randAlpha,label='data-random')
+        #plt.plot(interpXValues,CDFDiff,color=randColor,ls='--',alpha=randAlpha,label='data-random')
         ax.set_xlabel('Degree')
         ax.set_ylabel('CDF')
         ax.legend()
@@ -1933,6 +1933,11 @@ def drawNetwork(bnet, cfg):
             the membership classes (class attributes) of non-members
         networkColors: matplotlib.cmap
             colors associated with different fields of business
+        nonUniqueColorTags: list
+            field tags of nodes not to be drawn with the color of their field but
+            networkNonUniqueColor (default: [])
+        networkNonUniqueColor: set
+            color of the nonUniqueColorTag nodes (default: None)
         bottomNetworkColor: str
             color of the bottom nodes (events)
         nodeShapes: list of strs
@@ -1957,6 +1962,8 @@ def drawNetwork(bnet, cfg):
     tags = cfg['tags']    
     classes = cfg['classes']
     networkColors = cfg['networkColors']
+    nonUniqueColorTags = cfg.get('nonUniqueColorTags',[])
+    networkNonUniqueColor = cfg.get('networkNonUniqueColor',None)
     bottomColor = cfg['networkBottomColor']
     nodeShapes = cfg['nodeShapes']
     bottomShape = cfg['bottomShape']
@@ -1992,17 +1999,21 @@ def drawNetwork(bnet, cfg):
     ax = fig.add_subplot(111)
     
     nx.draw_networkx_nodes(bnet,pos,ax=ax,nodelist=bottom,node_color=bottomColor,node_shape=bottomShape,
-                           node_size=nodeSize,label='Events)')
-    
+                           node_size=nodeSize,label='Events')
+        
     for i, tag in enumerate(tags):
+        if tag in nonUniqueColorTags:
+            nodeColor = networkNonUniqueColor
+        else:
+            nodeColor = networkColors(i)
         for j, mclass in enumerate(classes):
             taggedNodes = []
             for topn in top:
                 if bnet.nodes(data=True)[topn]['tag'] == tag and bnet.nodes(data=True)[topn]['class'] == mclass:
                     taggedNodes.append(topn)
-            nx.draw_networkx_nodes(bnet,pos,ax=ax,nodelist=taggedNodes,node_color=networkColors(i),node_shape=nodeShapes[j],
+            nodeColors = [nodeColor for i in range(len(taggedNodes))]
+            nx.draw_networkx_nodes(bnet,pos,ax=ax,nodelist=taggedNodes,node_color=nodeColors,node_shape=nodeShapes[j],
                                node_size=nodeSize,label=tag)
-
 
     if edgeWidth == 'weight':
         sortedEdges = list(bnet.edges())
@@ -2027,6 +2038,11 @@ def drawNetwork(bnet, cfg):
     plt.axis('off')    
     
     savePath = cfg['savePathBase'] + cfg['networkSaveName']
+    plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    
+    plt.close()
+    
+    savePath = cfg['savePathBase'] + 'node_labels.pdf'
     plt.savefig(savePath,format='pdf',bbox_inches='tight')
     
     plt.close()

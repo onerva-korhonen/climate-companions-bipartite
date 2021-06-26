@@ -158,8 +158,10 @@ classColors = [colors(i) for i in range(1,len(membershipClasses)+1)]
 bottomColor = colors(-1)
 
 #networkCMap = 'tab20'
-networkCMap = categorical_cmap(8,3,cmap='Set1')
-networkColors = cm.get_cmap('Set1', lut=len(tags))
+nonUniqueColorTags = ['HKI_1','HKI_2'] # nodes with this tag will be drawn with the same color 
+#networkCMap = categorical_cmap(8,3,cmap='Set1')
+networkColors = cm.get_cmap('tab20')#, lut=len(tags)-len(nonUniqueColorTags))
+networkNonUniqueColor = 'k'
 networkBottomColor = 'k'
 nodeSize = 50
 businessMemberNodeShape = 'o'
@@ -168,7 +170,7 @@ nonMemberNodeShape = 'd'
 HKINodeShape = '^'
 nodeShapes = [businessMemberNodeShape, otherMemberNodeShape, nonMemberNodeShape, HKINodeShape]
 bottomShape = 'o'
-edgeWidth = 'weight'
+edgeWidth = 1
 edgeAlpha = 0.5
 
 cliqueTopColor = 'r'

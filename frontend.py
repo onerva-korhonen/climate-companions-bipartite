@@ -191,6 +191,8 @@ else:
     cfg['bottomColor'] = pms.bottomColor
     cfg['classColors'] = pms.classColors
     cfg['networkColors'] = pms.networkColors
+    cfg['nonUniqueColorTags'] = pms.nonUniqueColorTags
+    cfg['networkNonUniqueColor'] = pms.networkNonUniqueColor
     cfg['networkBottomColor'] = pms.networkBottomColor
     cfg['nodeSize'] = pms.nodeSize
     cfg['nodeShapes'] = pms.nodeShapes
