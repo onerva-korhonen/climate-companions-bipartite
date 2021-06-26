@@ -186,7 +186,7 @@ cliqueHeatmapBottomLabels = [str(tick+1) for tick in cliqueHeatmapBottomTicks]
 identityLineStyle = '--'
 scatterMarker = '.'
 
-classMarkers = ['.','^','','o']
+classMarkers = ['o','s','','']
 markerAlpha = 0.7
 
 dataColor = 'r'
