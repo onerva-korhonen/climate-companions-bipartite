@@ -73,11 +73,11 @@ if numbersOnly:
         
         # Counting the number of members and non-members participating in events in this window
         assert year[-4::].isdigit(),'Please give the years in a form where the last 4 characters form an integer (e.g. "2011_2012")'
-        iyear = int(year[-4::])
+        endYear = int(year[-4::])
         top,_ = functions.getTopAndBottom(bnet)
         tlist = list(top)
-        nyears = [bnet.nodes(data=True)[node][pms.joiningYearKey] for node in tlist]
-        nclasses = [bnet.nodes(data=True)[node]['class'] for node in tlist]
+        joiningYears = [bnet.nodes(data=True)[node][pms.joiningYearKey] for node in tlist]
+        nodeClasses = [bnet.nodes(data=True)[node]['class'] for node in tlist]
         degrees = [bnet.degree(node) for node in tlist]
         mclasses = list(cfg['classes'])
         for nonMemberClass in cfg['nonMemberClasses']:
@@ -85,16 +85,16 @@ if numbersOnly:
         for mclass in mclasses:
             partCount = 0
             nonpartCount = 0
-            for nyear,nclass,degree in zip(nyears,nclasses,degrees):
-                if nclass == mclass:
+            for joiningYear,nodeClass,degree in zip(joiningYears,nodeClasses,degrees):
+                if nodeClass == mclass:
                     if degree > 0:
                         partCount += 1
-                    elif nyear <= iyear:
+                    elif joiningYear <= endYear:
                         nonpartCount += 1
             print 'In year(s) ' + year + ', in class ' + mclass + ' ' + str(partCount) + ' participants, ' + str(nonpartCount) + ' non-participants'
         partCount = 0
-        for nyear,nclass,degree in zip(nyears,nclasses,degrees):
-            if nclass in cfg['nonMemberClasses'] and degree > 0:
+        for joiningYear,nodeClass,degree in zip(joiningYears,nodeClasses,degrees):
+            if nodeClass in cfg['nonMemberClasses'] and degree > 0:
                 partCount += 1
         nonMemberStr = ', '.join(cfg['nonMemberClasses'])
         print 'In year(s) ' + year + ', in classes ' + nonMemberStr + ' ' + str(partCount) + ' participants'
@@ -141,9 +141,7 @@ if numbersOnly:
     
     jaccards = []
     jaccardsWithoutNonmembers = []
-    
-    cnet.add_nodes_from(nodesToExcludeFromDegrees) # before calculating Jaccards without non-members, let's add back the member nodes that were excluded from degree calculations (instances of the city of Helsinki)
-    
+        
     for i in range(len(years)-1):
         jaccard = functions.getJaccardIndex(topNodes[i],topNodes[i+1])
         jaccards.append(jaccard)

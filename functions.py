@@ -611,11 +611,12 @@ def getDegreeNodeDictionary(bnet,cfg,nameKey='Member:'):
     Parameters:
     -----------
     bnet: nx.Graph(), a bipartite
-    nameKey: str, the key corresponding the name of the company in the node
-             attributes dictionary (default: 'Member:')
-    cfg: dict, contains (at least):
+    cfg: dict, contains:
          savePathBase: str, a base path (e.g. to a shared folder) for saving figures
          degreeNodeDictionarySaveName: str, name of the file to which save the dictionary
+         (if degreeNodeDictionarySaveName is not present in cfg.keys(), the dictionary is not saved)
+    nameKey: str, the key corresponding the name of the company in the node
+             attributes dictionary (default: 'Member:')
     
     
     Returns:
@@ -635,9 +636,10 @@ def getDegreeNodeDictionary(bnet,cfg,nameKey='Member:'):
         saveDict['Degree:'].append(degree)
         saveDict['Number of companies:'].append(len(companies))
         saveDict['Companies:'].append(companies)
-    df = pd.DataFrame(saveDict,columns=['Degree:','Number of companies:','Companies:'])
-    savePath = cfg['savePathBase'] + cfg['degreeNodeDictionarySaveName']
-    df.to_csv(savePath,index=None,header=True)
+    if 'degreeNodeDictionarySaveName' in cfg.keys():
+        df = pd.DataFrame(saveDict,columns=['Degree:','Number of companies:','Companies:'])
+        savePath = cfg['savePathBase'] + cfg['degreeNodeDictionarySaveName']
+        df.to_csv(savePath,index=None,header=True)
     
     return degreeDict
 

@@ -80,6 +80,7 @@ def getLinkInputPaths(years, linkInputStem, extension='.csv', manualLinkInputPat
     return linkInputPaths
 
 # input
+    
 # NOTE on link input paths: Link input paths are expected to follow a shared structure:
 # linkInputStem + year + linkInputExtension
 # If some of the paths don't follow this structure, they can be given using the manualLinkInputPaths
