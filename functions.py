@@ -349,7 +349,8 @@ def getDegreeDistributions(bnet, cfg):
     bnet: networkx.Graph(), bipartite
     cfg: dict, contains:
         savePathBase: str, a base path (e.g. to a shared folder) for saving figures
-        degreeSaveName: str, name of the file where to save the degree distribution plots
+        degreeSaveName: str, name of the file where to save the degree distribution plots (optional;
+                        if DegreeSaveName is not given, the figure is not saved but shown)
         nTopDegreeBins: int, number of bins used to calculate the top degree distribution
         nBottomDegreeBins: int, number of bins used to calculate the bottom degree distribution
         topColor: str, color for plotting the top degree distribution
@@ -376,7 +377,6 @@ def getDegreeDistributions(bnet, cfg):
     nBottomBins = cfg['nBottomDegreeBins']
     topColor = cfg['topColor']
     bottomColor = cfg['bottomColor']  
-    savePath = cfg['savePathBase'] + cfg['degreeSaveName']
     separateClasses = cfg['separateClasses']
     
     top, bottom = getTopAndBottom(bnet)
@@ -426,8 +426,12 @@ def getDegreeDistributions(bnet, cfg):
     ax.set_title('Events (bottom nodes)')
     #ax.legend()
     
-    plt.tight_layout()
-    plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    if 'degreeSaveName' in cfg.keys():
+        savePath = cfg['savePathBase'] + cfg['degreeSaveName']
+        plt.tight_layout()
+        plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    else:
+        plt.show()
     
     plt.close()
     
@@ -445,6 +449,8 @@ def getDegreeHistogram(bnet, cfg):
     cfg: dict, contains:
         savePathBase: str, a base path (e.g. to a shared folder) for saving figures
         degreeHistogramSaveName: str, name of the file where to save the degree distribution plots
+                                 (optional; if degreeHistogramSaveName is not given, the figure is
+                                 shown instead of saving)
         topColor: str, color for plotting the histogram for top nodes
         bottomColor: str, color for plotting the histogram for bottom nodes
         separateClasses: bln, if True, the top histobram is plotted separately for
@@ -461,7 +467,6 @@ def getDegreeHistogram(bnet, cfg):
     """
     topColor = cfg['topColor']
     bottomColor = cfg['bottomColor']  
-    savePath = cfg['savePathBase'] + cfg['degreeHistogramSaveName']
     separateClasses = cfg['separateClasses']
     if 'histWidth' in cfg.keys():
         histWidth = cfg['histWidth']
@@ -514,7 +519,11 @@ def getDegreeHistogram(bnet, cfg):
     ax.set_title('Events (bottom nodes)')
     
     plt.tight_layout()
-    plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    if 'degreeHistogramSaveName' in cfg.keys():
+        savePath = cfg['savePathBase'] + cfg['degreeHistogramSaveName']
+        plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    else:
+        plt.show()
     
     plt.close()
 
@@ -561,6 +570,7 @@ def findTopNodesInPercentile(bnet,lowPercentile,highPercentile,cfg):
     cfg: dict, contains:
          savePathBase: str, a base path (e.g. to a shared folder) for saving figures
          degreeSaveName: str, name of the file where to save the degree distribution plots
+                         (optional; if not given, the figure is shown instead of saving)
          nDegreeBins: int, number of bins used to calculate the distributions
          topColor: str, color for plotting the top degree distribution
                    
@@ -593,11 +603,14 @@ def findTopNodesInPercentile(bnet,lowPercentile,highPercentile,cfg):
     ax.set_ylabel('PDF')
     ax.set_title('Companies (top nodes)')
     
-    savePath = cfg['savePathBase'] + cfg['degreeSaveName'][0:-4] + '_lowPercentile_' + str(lowPercentile) + '_highPercentile_' + str(highPercentile) + cfg['degreeSaveName'][-4::]
-    
     plt.tight_layout()
-    plt.savefig(savePath,format='pdf',bbox_inches='tight')
     
+    if 'degreeSaveName' in cfg.keys():
+        savePath = cfg['savePathBase'] + cfg['degreeSaveName'][0:-4] + '_lowPercentile_' + str(lowPercentile) + '_highPercentile_' + str(highPercentile) + cfg['degreeSaveName'][-4::]
+        plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    else:
+        plt.show()
+        
     plt.close()
     
     return lowPercentileNodes,highPercentileNodes
@@ -662,6 +675,7 @@ def getFieldHistogram(bnet, cfg):
                      top node classes if separateClasses == True
         fieldHistWidth: float, width of the bars
         savePathBase: str, a base path (e.g. to a shared folder) for saving figures
+                      (optional, if not given, the figures are not saved by shown)
         fieldHistogramSaveName: str, path for saving the  bar plot
         
         
@@ -785,15 +799,19 @@ def getFieldHistogram(bnet, cfg):
         ax.set_ylabel('Field')
         fig.tight_layout()
     
-    savePath = cfg['savePathBase'] + cfg['fieldHistogramSaveName']
-    classesSavePath = cfg['savePathBase'] + cfg['fieldHistogramClassesSaveName']
+    if 'fieldHistogramSaveName' in cfg.keys():
+        savePath = cfg['savePathBase'] + cfg['fieldHistogramSaveName']
+        classesSavePath = cfg['savePathBase'] + cfg['fieldHistogramClassesSaveName']
     
-    plt.figure(1)
-    plt.savefig(savePath,format='pdf',bbox_inches='tight')
+        plt.figure(1)
+        plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    
+        plt.figure(2)
+        plt.savefig(classesSavePath,format='pdf',bbox_inches='tight')
+    else:
+        plt.show()
+        
     plt.close(1)
-    
-    plt.figure(2)
-    plt.savefig(classesSavePath,format='pdf',bbox_inches='tight')
     plt.close(2)
     
 def createDegreeIndexScatter(bnet, cfg):
@@ -833,7 +851,8 @@ def createDegreeIndexScatter(bnet, cfg):
         indexPercentileColor: str, color for drawing the index percentile line (default: 'k')
         indexPercentileAlpha float, alpha (transparency) value for drawing the index percentile line (default: 0.5)
         savePathBase: str, a base path (e.g. to a shared folder) for saving figures
-        degreeIndexScatterSaveName: str, path for saving the scatter
+        degreeIndexScatterSaveName: str, path for saving the scatter (optional, if not given, the figure is shown
+                                    instead of saving)
         
     Returns:
     --------
@@ -851,7 +870,6 @@ def createDegreeIndexScatter(bnet, cfg):
         indexPercentileLineStyle = cfg.get('indexPercentileLineStyle','--')
         indexPercentileColor = cfg.get('indexPercentileColor','k')
         indexPercentileAlpha = cfg.get('indexPercentileAlpha',0.5)
-    savePath = cfg['savePathBase'] + cfg['degreeIndexScatterSaveName']
     
     top, _ = getTopAndBottom(bnet)
     topDegrees = dict(nx.degree(bnet,top)) # degrees returns a DegreeView so this is required for accessing values
@@ -927,7 +945,11 @@ def createDegreeIndexScatter(bnet, cfg):
     ax.set_xlabel('Degree')
     ax.set_ylabel('Performance index')
     ax.legend()
-    plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    if 'degreeIndexScatterSaveName' in cfg.keys():
+        savePath = cfg['savePathBase'] + cfg['degreeIndexScatterSaveName']
+        plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    else:
+        plt.show()
     
 def createDegreeIndexHeatmap(bnet,cfg):
     """
@@ -958,7 +980,8 @@ def createDegreeIndexHeatmap(bnet,cfg):
                  analysis or not (the mask can be used either together with or instead of nodesToExcludeFromScatter) (default: '')
         nTopDegreeBins: int, number of bins for binning the degrees (default: 20)
         nIndexBins: int, number of bins for binning the indices (default: 20)
-        degreeIndexHeatmapSaveName: str, path for saving the heatmap
+        degreeIndexHeatmapSaveName: str, path for saving the heatmap (optional; if not given, the figure will be shown instead
+                                    of saving)
         
     Returns:
     --------
@@ -1047,8 +1070,11 @@ def createDegreeIndexHeatmap(bnet,cfg):
         cbar.ax.set_ylabel('Mean index change', rotation=-90, va="bottom")
             
     fig.tight_layout()
-    savePath = cfg['savePathBase'] + cfg['degreeIndexHeatmapSaveName']
-    plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    if 'degreeIndexHeatmapSaveName' in cfg.keys():
+        savePath = cfg['savePathBase'] + cfg['degreeIndexHeatmapSaveName']
+        plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    else:
+        plt.show()
     
     plt.close()
             
@@ -1325,7 +1351,8 @@ def createCliqueIndexHeatmap(cliqueInfo, cfg):
         cliqueHeatmapTopBins: list of ints, bin edges for the top (company) index
         cliqueHeatmapBottomBins: list of ints, bin edges for the bottom (event) index
         savePathBase: str, a base path (e.g. to a shared folder) for saving figures
-        cliqueHeatmapSaveName: str, name of the file where to save the heatmap
+        cliqueHeatmapSaveName: str, name of the file where to save the heatmap (optional; if not given, the figure will be
+                               shown instead of saving)
         
     Returns:
     --------
@@ -1358,8 +1385,11 @@ def createCliqueIndexHeatmap(cliqueInfo, cfg):
     #ax.add_colorbar()
     fig.tight_layout()
     
-    savePath = cfg['savePathBase'] + cfg['cliqueHeatmapSaveName']
-    plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    if 'cliqueHeatmapSaveName' in cfg.keys():
+        savePath = cfg['savePathBase'] + cfg['cliqueHeatmapSaveName']
+        plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    else:
+        plt.show()
     
     plt.close()
         
@@ -1599,6 +1629,7 @@ def compareAgainstRandom(bnet,cfg,measures):
                fieldHistWidth: float, width of the bars in bar plot showing fieldwise mean degrees (used if starness in measures.keys())
                savePathBase: str, a base path (e.g. to a shared folder) for saving figures
                comparisonVsRandomSaveName: str, name of the file where to save visualizations of the comparison
+                                           (optional: if not given, the figures are shown instead of saving)
     measures, dict, possible keys:
                     starness: double, starness of the bigraph
                     cliques: list of lists, cliques of the bipartite (each clique presented as a list of nodes)
@@ -1622,7 +1653,7 @@ def compareAgainstRandom(bnet,cfg,measures):
     diversityLineStyle = cfg.get('diversityLineStyle','--')
     nRandBins = cfg['nRandomBins']
     savePathBase = cfg['savePathBase']
-    saveNameBase = cfg['comparisonVsRandomSaveName']  
+    saveNameBase = cfg.get('comparisonVsRandomSaveName',None)  
     
     if 'starness' in measures.keys():
         starness = measures['starness']
@@ -1662,8 +1693,11 @@ def compareAgainstRandom(bnet,cfg,measures):
             ax.set_ylim(cfg['starnessYLims'][0],cfg['starnessYLims'][1])
         ax.legend()
         plt.tight_layout()
-        savePath = savePathBase + saveNameBase + '_starness.pdf'
-        plt.savefig(savePath,format='pdf',bbox_inches='tight')
+        if saveNameBase:
+            savePath = savePathBase + saveNameBase + '_starness.pdf'
+            plt.savefig(savePath,format='pdf',bbox_inches='tight')
+        else:
+            plt.show()
         plt.close()
         
         randXValues, randCDF = getCDF(randTopDegrees)
@@ -1688,8 +1722,11 @@ def compareAgainstRandom(bnet,cfg,measures):
         ax.set_ylabel('CDF')
         ax.legend()
         plt.tight_layout()
-        savePath = savePathBase + saveNameBase + '_cdf.pdf'
-        plt.savefig(savePath,format='pdf',bbox_inches='tight')
+        if saveNameBase:
+            savePath = savePathBase + saveNameBase + '_cdf.pdf'
+            plt.savefig(savePath,format='pdf',bbox_inches='tight')
+        else:
+            plt.show()
         plt.close()
         
         randDegreeDist, randDegreeBins = getDistribution(randTopDegrees,nDegreeBins)
@@ -1701,8 +1738,11 @@ def compareAgainstRandom(bnet,cfg,measures):
         ax.set_ylabel('PDF')
         ax.legend()
         plt.tight_layout()
-        savePath = savePathBase + saveNameBase + '_random_degree_pdf.pdf'
-        plt.savefig(savePath,format='pdf',bbox_inches='tight')
+        if saveNameBase:
+            savePath = savePathBase + saveNameBase + '_random_degree_pdf.pdf'
+            plt.savefig(savePath,format='pdf',bbox_inches='tight')
+        else:
+            plt.show()
         plt.close()
         
         trueFieldMeanDegrees = getFieldwiseMeanDegrees(bnet,ignoreNonMembers=True,nonMemberClasses=nonMemberClasses)
@@ -1738,8 +1778,11 @@ def compareAgainstRandom(bnet,cfg,measures):
         ax.set_xlabel('Mean degree')
         ax.set_ylabel('Field')
         plt.tight_layout()
-        savePath = savePathBase + saveNameBase + '_fieldwise_mean_degree.pdf'
-        plt.savefig(savePath,format='pdf',bbox_inches='tight')
+        if saveNameBase:
+            savePath = savePathBase + saveNameBase + '_fieldwise_mean_degree.pdf'
+            plt.savefig(savePath,format='pdf',bbox_inches='tight')
+        else:
+            plt.show()
         plt.close()
     if 'richness' in measures.keys():
         richness = measures['richness']
@@ -1785,8 +1828,11 @@ def compareAgainstRandom(bnet,cfg,measures):
         ax.set_title('Richness')
         ax.legend()
         plt.tight_layout()
-        savePath = savePathBase + saveNameBase + '_richness_dist.pdf'
-        plt.savefig(savePath,format='pdf',bbox_inches='tight')
+        if saveNameBase:
+            savePath = savePathBase + saveNameBase + '_richness_dist.pdf'
+            plt.savefig(savePath,format='pdf',bbox_inches='tight')
+        else:
+            plt.show()
         plt.close()
 
         fig = plt.figure()
@@ -1816,8 +1862,11 @@ def compareAgainstRandom(bnet,cfg,measures):
         if 'richnessYLims' in cfg.keys():
             ax.set_ylim(cfg['richnessYLims'][0],cfg['richnessYLims'][1])
         plt.tight_layout()
-        savePath = savePathBase + saveNameBase + '_mean_richness_and_effective_diversity_dist.pdf'
-        plt.savefig(savePath,format='pdf',bbox_inches='tight')
+        if saveNameBase:
+            savePath = savePathBase + saveNameBase + '_mean_richness_and_effective_diversity_dist.pdf'
+            plt.savefig(savePath,format='pdf',bbox_inches='tight')
+        else:
+            plt.show()
         plt.close()
             
         if 'diversity' in measures.keys():
@@ -1832,8 +1881,11 @@ def compareAgainstRandom(bnet,cfg,measures):
             ax.set_title('Effective diversity')
             ax.legend()
             plt.tight_layout()
-            savePath = savePathBase + saveNameBase + '_effective_diversity_dist.pdf'
-            plt.savefig(savePath,format='pdf',bbox_inches='tight')
+            if saveNameBase:
+                savePath = savePathBase + saveNameBase + '_effective_diversity_dist.pdf'
+                plt.savefig(savePath,format='pdf',bbox_inches='tight')
+            else:
+                plt.show()
             plt.close()
             
             fig = plt.figure()
@@ -1856,8 +1908,11 @@ def compareAgainstRandom(bnet,cfg,measures):
                 ax.set_ylim(cfg['relativeDivYLims'][0],cfg['relativeDivYLims'][1])
             ax.legend()
             plt.tight_layout()
-            savePath = savePathBase + saveNameBase + '_relative_diversity_dist.pdf'
-            plt.savefig(savePath,format='pdf',bbox_inches='tight')
+            if saveNameBase:
+                savePath = savePathBase + saveNameBase + '_relative_diversity_dist.pdf'
+                plt.savefig(savePath,format='pdf',bbox_inches='tight')
+            else:
+                plt.show()
             plt.close()
             
             fig = plt.figure()
@@ -1870,8 +1925,11 @@ def compareAgainstRandom(bnet,cfg,measures):
             ax.set_ylabel('Effective diversity')
             ax.legend()
             plt.tight_layout()
-            savePath = savePathBase + saveNameBase + '_diversity_vs_richness.pdf'
-            plt.savefig(savePath,format='pdf',bbox_inches='tight')
+            if saveNameBase:
+                savePath = savePathBase + saveNameBase + '_diversity_vs_richness.pdf'
+                plt.savefig(savePath,format='pdf',bbox_inches='tight')
+            else:
+                plt.show()
             plt.close()
             
             fig = plt.figure()
@@ -1883,8 +1941,11 @@ def compareAgainstRandom(bnet,cfg,measures):
             ax.set_ylabel('Relative diversity')
             ax.legend()
             plt.tight_layout()
-            savePath = savePathBase + saveNameBase + '_relative_diversity_vs_size.pdf'
-            plt.savefig(savePath,format='pdf',bbox_inches='tight')
+            if saveNameBase:
+                savePath = savePathBase + saveNameBase + '_relative_diversity_vs_size.pdf'
+                plt.savefig(savePath,format='pdf',bbox_inches='tight')
+            else:
+                plt.show()
             plt.close()
         
     elif 'diversity' in measures.keys():
@@ -1910,8 +1971,11 @@ def compareAgainstRandom(bnet,cfg,measures):
         ax.set_ylabel('PDF')
         ax.set_title('Effective diversity')
         ax.legend()
-        savePath = savePathBase + saveNameBase + '_diversity_dist.pdf'
-        plt.savefig(savePath,format='pdf',bbox_inches='tight')
+        if saveNameBase:
+            savePath = savePathBase + saveNameBase + '_diversity_dist.pdf'
+            plt.savefig(savePath,format='pdf',bbox_inches='tight')
+        else:
+            plt.show()
         plt.close()
 
     
@@ -1955,7 +2019,8 @@ def drawNetwork(bnet, cfg):
         savePathBase: str
             a base path (e.g. to a shared folder) for saving figures
         networkSaveName: str
-            name of the file where to save the network visualization
+            name of the file where to save the network visualization (optional;
+            if NetworkSaveName is not given, the figure is not saved but shown)
         
     Returns:
     --------
@@ -2039,15 +2104,13 @@ def drawNetwork(bnet, cfg):
     #ax.legend()
     plt.axis('off')    
     
-    savePath = cfg['savePathBase'] + cfg['networkSaveName']
-    plt.savefig(savePath,format='pdf',bbox_inches='tight')
-    
-    plt.close()
-    
-    savePath = cfg['savePathBase'] + 'node_labels.pdf'
-    plt.savefig(savePath,format='pdf',bbox_inches='tight')
-    
-    plt.close()
+    if 'networkSaveName' in cfg.keys():
+        savePath = cfg['savePathBase'] + cfg['networkSaveName']
+        plt.savefig(savePath,format='pdf',bbox_inches='tight')
+        plt.close()
+    else:
+        plt.show()
+        plt.close()
     
 def visualizeBicliques(bnet, cliqueInfo, cfg):
     """
@@ -2069,6 +2132,7 @@ def visualizeBicliques(bnet, cliqueInfo, cfg):
         edgeAlpha: double, opacity of edges
         savePathBase: str, a base path (e.g. to a shared folder) for saving figures
         cliquesSaveName: str, name of the file where to save the clique visualization
+                         (optional; if not given, the figures are shown instead of saving)
         
     Returns:
     --------
@@ -2085,7 +2149,7 @@ def visualizeBicliques(bnet, cliqueInfo, cfg):
     else:
         edgeAlpha = 1
     
-    saveName = cfg['cliquesSaveName']
+    saveName = cfg.get('cliquesSaveName',None)
     
     pos = nx.spring_layout(bnet)
     
@@ -2107,8 +2171,11 @@ def visualizeBicliques(bnet, cliqueInfo, cfg):
             nx.draw_networkx_edges(bnet,pos=pos,width=edgeWidth,alpha=edgeAlpha)
         plt.axis('off')  
         
-        savePath = cfg['savePathBase'] + saveName + '_' + str(i) + '.pdf'
-        plt.savefig(savePath,format='pdf',bbox_inches='tight')
+        if saveName:
+            savePath = cfg['savePathBase'] + saveName + '_' + str(i) + '.pdf'
+            plt.savefig(savePath,format='pdf',bbox_inches='tight')
+        else:
+            plt.show()
         plt.close()
         
 def plotRichnessVsDiversity(richnesses,diversities,cfg):
@@ -2123,6 +2190,7 @@ def plotRichnessVsDiversity(richnesses,diversities,cfg):
     cfg: a dictionary containing:
         savePathBase: str, a base path (e.g. to a shared folder) for saving figures
         diversitySaveName: str, name of the file where to save the visualization
+                           (optional; if not given, the figure is shown instead of saving)
         identityLineStyle: str, line style for plotting the identity line
         scatterMarker: str, point marker style
         
@@ -2140,8 +2208,11 @@ def plotRichnessVsDiversity(richnesses,diversities,cfg):
     ax.legend()
     fig.tight_layout()
     
-    savePath = cfg['savePathBase'] + cfg['diversitySaveName']
-    plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    if 'diversitySaveName' in cfg.keys():
+        savePath = cfg['savePathBase'] + cfg['diversitySaveName']
+        plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    else:
+        plt.show()
     
     plt.close()
     
@@ -2160,6 +2231,7 @@ def plotRelativeDiversity(cliques,richnesses,diversities,cfg):
     cfg: a dictionary containing:
         savePathBase: str, a base path (e.g. to a shared folder) for saving figures
         relativeDiversitySaveName: str, name of the file where to save the visualization
+                                   (optional, if not given, the figure is shown instead of saving)
         identityLineStyle: str, line style for plotting the identity line
         scatterMarker: str, point marker style
     
@@ -2187,8 +2259,11 @@ def plotRelativeDiversity(cliques,richnesses,diversities,cfg):
     ax.legend()
     fig.tight_layout()
     
-    savePath = cfg['savePathBase'] + cfg['relativeDiversitySaveName']
-    plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    if 'relativeDiversitySaveName' in cfg.keys():
+        savePath = cfg['savePathBase'] + cfg['relativeDiversitySaveName']
+        plt.savefig(savePath,format='pdf',bbox_inches='tight')
+    else:
+        plt.show()
     
     plt.close()
 
@@ -2211,15 +2286,15 @@ def plotDiversityVsIndices(cliqueInfo,richnesses,diversities,cfg):
     cfg: dict, contains:
         savePathBase: str, a base path (e.g. to a shared folder) for saving figures
         diversityVsBottomIndexSaveName: str, file name for saving the figure of diversity vs bottom index
+                                        (optional; if not given, the figure is not saved but shown)
         diversityVsTopIndexSaveName: str, file name for saving the figure of diveristy vs top index
+                                     (optional; if not given, the figure is not saved but shown)
         scatterMarker: str, point marker style
         
     Returns:
     --------
     No direct output, saves the plot to the given path
     """
-    bottomSavePath = cfg['savePathBase'] + cfg['diversityVsBottomIndexSaveName']
-    topSavePath = cfg['savePathBase'] + cfg['diversityVsTopIndexSaveName']
     scatterMarker = cfg['scatterMarker']
     bottomIndices = [info['bottomIndex'] for info in cliqueInfo]
     topIndices = [info['topIndex'] for info in cliqueInfo]
@@ -2247,7 +2322,11 @@ def plotDiversityVsIndices(cliqueInfo,richnesses,diversities,cfg):
     bottomAx4.set_xlabel('Number of bottom nodes (events)')
     bottomAx4.set_ylabel('Clique size')
     bottomFig.tight_layout()
-    plt.savefig(bottomSavePath,format='pdf',bbox_inches='tight')
+    if 'diversityVsBottomIndexSaveName' in cfg.keys():
+        bottomSavePath = cfg['savePathBase'] + cfg['diversityVsBottomIndexSaveName']
+        plt.savefig(bottomSavePath,format='pdf',bbox_inches='tight')
+    else:
+        plt.show()
     plt.close()
     
     topFig = plt.figure()
@@ -2269,7 +2348,11 @@ def plotDiversityVsIndices(cliqueInfo,richnesses,diversities,cfg):
     topAx4.set_xlabel('Number of top nodes (companies)')
     topAx4.set_ylabel('Clique size')
     topFig.tight_layout()
-    plt.savefig(topSavePath,format='pdf',bbox_inches='tight')
+    if 'diversityVsTopIndexSaveName' in cfg.keys():
+        topSavePath = cfg['savePathBase'] + cfg['diversityVsTopIndexSaveName']
+        plt.savefig(topSavePath,format='pdf',bbox_inches='tight')
+    else:
+        plt.show()
     plt.close()
     
     
