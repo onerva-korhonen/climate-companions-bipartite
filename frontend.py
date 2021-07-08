@@ -287,7 +287,7 @@ else:
         
         measures = {'richness':richnesses,'diversity':diversities, 'cliques':cliques}
         
-        functions.compareAgainstRandom(bnet,cfg,measures)
+        functions.compareAgainstRandom(bnet,cfg,measures,plotPDFs=True)
         
         cfg['nonMemberClasses'] = pms.nonMemberClassesForStarness
         # for analyzing starness, let's remove from stars the nodes that participate also in other cliques
@@ -300,7 +300,7 @@ else:
         
         measures = {'starness':starness}
         
-        functions.compareAgainstRandom(bnet,cfg,measures)
+        functions.compareAgainstRandom(bnet,cfg,measures,plotPDFs=True)
         print year + ' OK'
         
     print 'Densities:'
