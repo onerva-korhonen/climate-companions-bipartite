@@ -1133,7 +1133,7 @@ def stuffNetwork(bnet):
     
     return stuffedNet
 
-def findBicliques(bnet):
+def findBicliques(bnet, verbose=False):
     """
     Finds the maximal bicliques of the bipartite network bnet. Biclique is a complete subgraph 
     of bnet so that each member of a biclique is connected to each other member 
@@ -1147,6 +1147,7 @@ def findBicliques(bnet):
     Parameters:
     -----------
     bnet: networkx.Graph(), a bipartite
+    verbose: bln, should information about the process be printed (default: False)
     
     Returns:
     --------
@@ -1162,14 +1163,16 @@ def findBicliques(bnet):
     for clique in cliques: # remocing the top and bottom cliques
         if set(clique) == top:
             cliques.remove(clique)
-            print 'removed top:'
-            print clique
+            if verbose:
+                print 'removed top:'
+                print clique
             break
     for clique in cliques:
         if set(clique) == bottom:
             cliques.remove(clique)
-            print 'removed bottom:'
-            print clique
+            if verbose:
+                print 'removed bottom:'
+                print clique
             break
     
     cliqueInfo = getCliqueIndices(bnet,cliques)
@@ -1432,7 +1435,7 @@ def getStarness(bnet,cliqueInfo,ignoreNonMembers=False,nonMemberClasses=[]):
     starness = nStarNodes/float(nTotal)
     return starness
     
-def getCliqueFieldDiversity(bnet,cliqueInfo):
+def getCliqueFieldDiversity(bnet,cliqueInfo,verbose=False):
     """
     Calculates the diversity of a biclique in terms of the fields of business
     of the participating top nodes (companies). For obtaining the diversity, the
@@ -1449,6 +1452,7 @@ def getCliqueFieldDiversity(bnet,cliqueInfo):
         bottomIndex: int, number of bottom nodes of the clique,
         isBridge: boolean, does the clique consist of one top node (company) connecting multiple bottom nodes,
         isStar: boolean, does the clique consist of node bottom node (event) connecting multiple top nodes
+    verbose: bln, should the diversity values be printed (default: False)
     
     Returns:
     --------
@@ -1476,7 +1480,8 @@ def getCliqueFieldDiversity(bnet,cliqueInfo):
     majorField = max(count,key=count.get)
     nMajor = count[majorField]
     majorFraction = nMajor/float(len(topNodes))
-    print 'For the present clique, effective diversity: ' + str(cliqueDiversity) + ', major field: ' + majorField + ', ' + str(nMajor) + ', ' + str(majorFraction) + ' of all (' + str(len(topNodes)) + ') companies'
+    if verbose:
+        print 'For the present clique, effective diversity: ' + str(cliqueDiversity) + ', major field: ' + majorField + ', ' + str(nMajor) + ', ' + str(majorFraction) + ' of all (' + str(len(topNodes)) + ') companies'
     return richness, cliqueDiversity, count, majorField
     
 def getCliqueFieldDiversityWrapper(bnet,cliqueInfo):
@@ -2267,7 +2272,7 @@ def plotRelativeDiversity(cliques,richnesses,diversities,cfg):
     
     plt.close()
 
-def plotDiversityVsIndices(cliqueInfo,richnesses,diversities,cfg):
+def plotDiversityVsIndices(cliqueInfo,richnesses,diversities,cfg,verbose=False):
     """
     Plots the clique diversities (richness, effective diversity, and effective
     diversity) as a function of the number of top and bottom nodes in the clique.
@@ -2290,6 +2295,7 @@ def plotDiversityVsIndices(cliqueInfo,richnesses,diversities,cfg):
         diversityVsTopIndexSaveName: str, file name for saving the figure of diveristy vs top index
                                      (optional; if not given, the figure is not saved but shown)
         scatterMarker: str, point marker style
+    verbose: bln, should information about the process be printed (default: False)
         
     Returns:
     --------
@@ -2300,8 +2306,9 @@ def plotDiversityVsIndices(cliqueInfo,richnesses,diversities,cfg):
     topIndices = [info['topIndex'] for info in cliqueInfo]
     cliqueSizes = [top + bottom for top,bottom in zip(topIndices,bottomIndices)]
     
-    print 'Max number of events ' + str(max(bottomIndices))
-    print 'Max number of companies ' + str(max(topIndices))
+    if verbose:
+        print 'Max number of events ' + str(max(bottomIndices))
+        print 'Max number of companies ' + str(max(topIndices))
     
     bottomFig = plt.figure()
     bottomAx1 = bottomFig.add_subplot(221)
