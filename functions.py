@@ -172,10 +172,13 @@ def addNodes(cfg, net, bipartiteClass):
                 attr_dic['nodeColor'] = networkColors(tags.index(FoBs[i]))
                 attr_dic['tag'] = FoBs[i]
             else: # assuming that tag is included in the alias
+                teststr = ''.join([i for i in node.split('_')[-1] if not i.isdigit()]) # most nodes are of format [MEMBERSHIP_CLASS]_[TAG][INDEX]; here we pick only the tag part
                 foundTags = []
                 for tag in tags:
-                    if tag in node:
+                    if tag in teststr:
                         foundTags.append(tag)
+                if len(foundTags) == 0:
+                    foundTags.append(node) # for some nodes (the instances of the city of Helsinki) tag is the full node name (HKI_1 or HKI_2)
                 foundLengths = [len(found) for found in foundTags]
                 foundTag = foundTags[foundLengths.index(max(foundLengths))]
                 attr_dic['nodeColor'] = networkColors(tags.index(foundTag))
@@ -814,7 +817,7 @@ def getFieldHistogram(bnet, cfg):
     plt.close(1)
     plt.close(2)
     
-def createDegreeIndexScatter(bnet, cfg):
+def createDegreeIndexScatter(bnet, cfg, show_legend=True):
     """
     Creates a scatter plot of companies' performance index as a function of their
     degree (participation in events) and calculates Pearson correlation coefficient
@@ -853,6 +856,7 @@ def createDegreeIndexScatter(bnet, cfg):
         savePathBase: str, a base path (e.g. to a shared folder) for saving figures
         degreeIndexScatterSaveName: str, path for saving the scatter (optional, if not given, the figure is shown
                                     instead of saving)
+    show_legend: bln, should a legend be drawn (default: True)
         
     Returns:
     --------
@@ -944,7 +948,8 @@ def createDegreeIndexScatter(bnet, cfg):
         
     ax.set_xlabel('Degree')
     ax.set_ylabel('Performance index')
-    ax.legend()
+    if show_legend:
+        ax.legend()
     if 'degreeIndexScatterSaveName' in cfg.keys():
         savePath = cfg['savePathBase'] + cfg['degreeIndexScatterSaveName']
         plt.savefig(savePath,format='pdf',bbox_inches='tight')

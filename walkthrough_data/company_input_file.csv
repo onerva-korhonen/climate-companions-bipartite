@@ -1,0 +1,212 @@
+Member:;Alias:;Index:;Max degree:
+Business member A1;BM_A1;0;3
+Business member A2;BM_A2;0;12
+Business member A3;BM_A3;0.505102041;18
+Business member A4;BM_A4;0.571428571;18
+Business member A5;BM_A5;0.678571429;3
+Business member A6;BM_A6;0.632653061;18
+Business member A7;BM_A7;0.351190476;16
+Business member B1;BM_B1;0;3
+Business member B10;BM_B10;0.369047619;16
+Business member B11;BM_B11;0.454081633;18
+Business member B12;BM_B12;0.566326531;18
+Business member B13;BM_B13;0.35;14
+Business member B14;BM_B14;0.276785714;12
+Business member B15;BM_B15;0.408163265;18
+Business member B16;BM_B16;0.280612245;18
+Business member B2;BM_B2;0;12
+Business member B3;BM_B3;0.558163265;18
+Business member B4;BM_B4;0;12
+Business member B5;BM_B5;0.045918367;18
+Business member B6;BM_B6;0.382653061;18
+Business member B7;BM_B7;0.647959184;18
+Business member B8;BM_B8;0;5
+Business member B9;BM_B9;0.428571429;16
+Business member C1;BM_C1;0;3
+Business member C2;BM_C2;0.642857143;18
+Business member C3;BM_C3;0.566326531;18
+Business member C4;BM_C4;0.265306122;18
+Business member C5;BM_C5;0;18
+Business member C6;BM_C6;0.482142857;5
+Business member C7;BM_C7;0.464285714;5
+Business member C8;BM_C8;0.392857143;3
+Business member D1;BM_D1;0.408163265;18
+Business member D2;BM_D2;0.507142857;14
+Business member D3;BM_D3;0;12
+Business member D4;BM_D4;0.223214286;12
+Business member E1;BM_E1;0.455102041;18
+Business member E2;BM_E2;0.303571429;5
+Business member E3;BM_E3;0.214285714;5
+Business member E4;BM_E4;0;3
+Business member E5;BM_E5;0;3
+Business member E6;BM_E6;0.413265306;18
+Business member E7;BM_E7;0.173469388;18
+Business member E8;BM_E8;0.5;3
+Business member E9;BM_E9;0;3
+Business member F1;BM_F1;0.428571429;5
+Business member F2;BM_F2;0.576530612;18
+Business member F3;BM_F3;0.433673469;18
+Business member F4;BM_F4;0.714285714;3
+Business member F5;BM_F5;0.285714286;5
+Business member G1;BM_G1;0;18
+Business member G2;BM_G2;0.25;12
+Business member G3;BM_G3;0.464285714;3
+Business member G4;BM_G4;0.494897959;18
+Business member G5;BM_G5;0.43452381;16
+Business member G6;BM_G6;0.62244898;18
+Business member G7;BM_G7;0.089285714;12
+Business member H1;BM_H1;0.612244898;18
+Business member H10;BM_H10;0;3
+Business member H11;BM_H11;0.357142857;3
+Business member H12;BM_H12;0.464285714;3
+Business member H2;BM_H2;0;3
+Business member H3;BM_H3;0;3
+Business member H5;BM_H5;0.363095238;16
+Business member H6;BM_H6;0.142857143;9
+Business member H7;BM_H7;0;3
+Business member H8;BM_H8;0;18
+Business member H9;BM_H9;0.267857143;5
+Business member I1;BM_I1;0.089285714;12
+Business member I2;BM_I2;0.530612245;18
+Business member I3;BM_I3;0.091836735;18
+Business member I4;BM_I4;0;3
+Business member I5;BM_I5;0;5
+Business member I6;BM_I6;0;3
+Business member I7;BM_I7;0.875;5
+Helsingin kaupunki 1;HKI_1;0;18
+Helsingin kaupunki 2;HKI_2;0;18
+Non-member J1;NM_J1;0;0
+Non-member J10;NM_J10;0;0
+Non-member J11;NM_J11;0;0
+Non-member J12;NM_J12;0;0
+Non-member J13;NM_J13;0;0
+Non-member J14;NM_J14;0;0
+Non-member J2;NM_J2;0;0
+Non-member J3;NM_J3;0;0
+Non-member J4;NM_J4;0;0
+Non-member J5;NM_J5;0;0
+Non-member J6;NM_J6;0;0
+Non-member J7;NM_J7;0;0
+Non-member J8;NM_J8;0;0
+Non-member J9;NM_J9;0;0
+Non-member A1;NM_A1;0;0
+Non-member A2;NM_A2;0;0
+Non-member A3;NM_A3;0;0
+Non-member B1;NM_B1;0;0
+Non-member B10;NM_B10;0;0
+Non-member B17;NM_B17;0;0
+Non-member B11;NM_B11;0;0
+Non-member B12;NM_B12;0;0
+Non-member B13;NM_B13;0;0
+Non-member B14;NM_B14;0;0
+Non-member B15;NM_B15;0;0
+Non-member B16;NM_B16;0;0
+Non-member B2;NM_B2;0;0
+Non-member B3;NM_B3;0;0
+Non-member B4;NM_B4;0;0
+Non-member B5;NM_B5;0;0
+Non-member B6;NM_B6;0;0
+Non-member B7;NM_B7;0;0
+Non-member B8;NM_B8;0;0
+Non-member B9;NM_B9;0;0
+Non-member C1;NM_C1;0;0
+Non-member C2;NM_C2;0;0
+Non-member C3;NM_C3;0;0
+Non-member C4;NM_C4;0;0
+Non-member C5;NM_C5;0;0
+Non-member C6;NM_C6;0;0
+Non-member C7;NM_C7;0;0
+Non-member C8;NM_C8;0;0
+Non-member D1;NM_D1;0;0
+Non-member D2;NM_D2;0;0
+Non-member D3;NM_D3;0;0
+Business member D5;BM_D5;0.482142857;5
+Non-member D5;NM_D5;0;0
+Non-member D6;NM_D6;0;0
+Non-member K1;NM_K1;0;0
+Non-member K2;NM_K2;0;0
+Non-member K3;NM_K3;0;0
+Non-member E1;NM_E1;0;0
+Non-member E2;NM_E2;0;0
+Non-member E3;NM_E3;0;0
+Non-member E4;NM_E4;0;0
+Non-member E5;NM_E5;0;0
+Non-member F1;NM_F1;0;0
+Non-member G1;NM_G1;0;0
+Non-member G2;NM_G2;0;0
+Non-member L1;NM_L1;0;0
+Non-member L2;NM_L2;0;0
+Non-member L3;NM_L3;0;0
+Non-member L4;NM_L4;0;0
+Non-member L5;NM_L5;0;0
+Non-member L6;NM_L6;0;0
+Non-member L7;NM_L7;0;0
+Non-member L8;NM_L8;0;0
+Non-member M1;NM_M1;0;0
+Non-member M2;NM_M2;0;0
+Non-member M3;NM_M3;0;0
+Non-member N1;NM_N1;0;0
+Non-member N10;NM_N10;0;0
+Non-member N11;NM_N11;0;0
+Non-member N2;NM_N2;0;0
+Non-member N3;NM_N3;0;0
+Non-member N4;NM_N4;0;0
+Non-member N5;NM_N5;0;0
+Non-member N6;NM_N6;0;0
+Non-member N7;NM_N7;0;0
+Non-member N8;NM_N8;0;0
+Non-member N9;NM_N9;0;0
+Non-member O1;NM_O1;0;0
+Non-member O10;NM_O10;0;0
+Non-member O2;NM_O2;0;0
+Non-member O3;NM_O3;0;0
+Non-member O4;NM_O5;0;0
+Non-member O5;NM_O6;0;0
+Non-member O6;NM_O7;0;0
+Non-member O7;NM_O9;0;0
+Non-member H1;NM_H1;0;0
+Non-member H10;NM_H10;0;0
+Non-member H22;NM_H22;0;0
+Non-member H11;NM_H11;0;0
+Non-member H12;NM_H12;0;0
+Non-member H13;NM_H13;0;0
+Non-member H14;NM_H14;0;0
+Non-member H15;NM_H15;0;0
+Non-member H16;NM_H16;0;0
+Non-member H17;NM_H17;0;0
+Non-member H18;NM_H18;0;0
+Non-member H19;NM_H19;0;0
+Non-member H2;NM_H2;0;0
+Non-member H20;NM_H20;0;0
+Non-member H21;NM_H21;0;0
+Non-member H3;NM_H3;0;0
+Non-member H4;NM_H4;0;0
+Non-member H5;NM_H5;0;0
+Non-member H6;NM_H6;0;0
+Non-member H7;NM_H7;0;0
+Non-member H8;NM_H8;0;0
+Non-member I1;NM_I1;0;0
+Non-member I2;NM_I2;0;0
+Non-member I3;NM_I3;0;0
+Non-member I4;NM_I4;0;0
+Non-member I5;NM_I5;0;0
+Non-member I6;NM_I6;0;0
+Non-member I7;NM_I7;0;0
+Non-member I8;NM_I8;0;0
+Other member L1;OM_L1;0.260204082;18
+Other member L2;OM_L2;0;18
+Other member N1;OM_N1;0.571428571;5
+Other member N2;OM_N2;0;3
+Other member N5;OM_N5;0.478571429;14
+Other member N4;OM_N4;0.637755102;18
+Other member O1;OM_O1;0.464285714;16
+Other member O10;OM_O10;0.163265306;18
+Other member O11;OM_O11;0;5
+Other member O2;OM_O2;0.454081633;18
+Other member O3;OM_O3;0;3
+Other member O4;OM_O4;0.37755102;18
+Other member O5;OM_O5;0;16
+Other member O6;OM_O6;0.089285714;12
+Other member O7;OM_O7;0;16
+Other member O8;OM_O8;0.255102041;18
+Other member O9;OM_O9;0.219387755;18
