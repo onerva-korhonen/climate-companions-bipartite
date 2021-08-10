@@ -3,7 +3,7 @@ Code for investigating the event co-participation based bipartite graph structur
 
 <code>functions.py</code> contains functions needed for creating and analysing the bipartite network. The functions can be called from either a frontend script (<code>fronend.py</code> was used for creating the results of the related article) or interactively. <code>parameters.py</code> stores all parameters used in the anlysis.
 
-For a short(-ish) walkthrough of the code and main results, have a look at <code>walkthrough.py</code> (related data is stored at <code<walkthrough_data</code>). The easiest way to do that is to launch Binder (that saves you the trouble of setting package versions or even installing python):
+For a short(-ish) walkthrough of the code and main results, have a look at <code>walkthrough.py</code> (related data is stored at <code>walkthrough_data</code>). The easiest way to do that is to launch Binder (that saves you the trouble of setting package versions or even installing python):
 
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/onerva-korhonen/climate-companions-bipartite/HEAD)
 
