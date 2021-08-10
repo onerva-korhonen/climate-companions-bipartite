@@ -7,7 +7,7 @@ For a short(-ish) walkthrough of the code and main results, have a look at <code
 
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/onerva-korhonen/climate-companions-bipartite/HEAD)
 
-(when the environment opens, just click <code>walkthrough.py</code> to launch the notebook).
+(Preparing the environment may take a while. When it opens, just click <code>walkthrough.py</code> to launch the notebook).
 
 The versions used are Python 2.7, Numpy 1.14.0, NetworkX 2.1, Scipy 1.0.0, and Matplotlib 2.1.2.
 
